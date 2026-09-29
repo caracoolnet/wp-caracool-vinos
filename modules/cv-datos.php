@@ -49,6 +49,7 @@ class Caracool_Vinos_Datos {
 		return array(
 			'mapa'     => ! empty( $d['mapa'] ),
 			'red'      => ! empty( $d['red'] ),
+			'toques'   => ! empty( $d['toques'] ),
 			'diseno'   => ( isset( $d['diseno'] ) && 'columnas' === $d['diseno'] ) ? 'columnas' : 'mundo',
 			'panel'    => ( isset( $d['panel'] ) && in_array( $d['panel'], array( 'mosaico', 'pildoras', 'ficha' ), true ) ) ? $d['panel'] : 'mosaico',
 			'esquinas' => ( isset( $d['esquinas'] ) && 'diseno' === $d['esquinas'] ) ? 'diseno' : 'web',

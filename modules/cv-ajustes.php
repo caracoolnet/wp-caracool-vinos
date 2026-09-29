@@ -246,7 +246,7 @@ class Caracool_Vinos_Ajustes {
 					<label for="cv-favoritos">Mis vinos</label>
 					<div>
 						<label class="cc-sw"><input type="checkbox" id="cv-favoritos" name="cv[favoritos]" value="si" <?php checked( 'si', $a['favoritos'] ); ?>><span></span></label>
-						<span class="cc-hint">El corazón en cada vino, el botón y la vista «Mis vinos» y el enlace para compartirla. Se guarda en el navegador de cada persona, sin cuenta.</span>
+						<span class="cc-hint">El corazón en cada vino, el botón y la vista «Mis vinos» y el enlace para compartirla. Se guarda en el navegador de cada persona, sin cuenta. La web cuenta cuántas personas han guardado cada vino, sin saber quiénes (lo ves en la pestaña Corazones), y lo enseña junto al corazón.</span>
 					</div>
 				</div>
 			</div>

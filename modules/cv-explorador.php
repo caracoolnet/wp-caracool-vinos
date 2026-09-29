@@ -77,6 +77,7 @@ class Caracool_Vinos_Explorador {
 			'precios'     => 'si' === $a['precios'],
 			'ubicacion'   => 'si' === $a['ubicacion'],
 			'favoritos'   => 'si' === $a['favoritos'],
+			'corazones'   => class_exists( 'Caracool_Vinos_Corazones' ) ? Caracool_Vinos_Corazones::config() : null,
 			'nombre'      => $a['nombre'],
 			'mundo'       => CARACOOL_VINOS_URL . 'assets/mundo-110m.json?v=' . CARACOOL_VINOS_VERSION,
 			'finos'       => CARACOOL_VINOS_URL . 'assets/finos-50m.json?v=' . CARACOOL_VINOS_VERSION,

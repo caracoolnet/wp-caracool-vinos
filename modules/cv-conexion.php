@@ -68,6 +68,8 @@ class Caracool_Vinos_Conexion {
 	private static function apuntar( $datos ) {
 		$e = array_merge( self::estado(), $datos, array( 'cuando' => time() ) );
 		update_option( self::OPCION_ESTADO, $e, false );
+		// tras cada comprobación (los corazones aprovechan para ir a Bodega)
+		do_action( 'caracool_vinos_comprobado', $e );
 		return $e;
 	}
 

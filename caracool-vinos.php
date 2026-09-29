@@ -3,7 +3,7 @@
  * Plugin Name:  Caracool Vinos
  * Plugin URI:   https://github.com/caracoolnet/wp-caracool-vinos
  * Description:  La carta de vinos de un restaurante, publicada como una página que se filtra por tipo, uva, bodega, zona y precio, con un globo que gira hasta la zona de cada vino y una red de países, zonas, bodegas y uvas. La carta la lee y la publica Caracool en Bodega; esta web la recibe con su licencia.
- * Version:           0.5.8
+ * Version:           0.6.0
  * Author:       Caracool
  * Author URI:   https://caracool.net
  * License:      GPL-2.0-or-later
@@ -32,6 +32,8 @@
  *   cv-conexion.php    recoger la carta de Bodega: aviso, rutina y botón; la licencia
  *   cv-ajustes.php     lo que se puede tocar: precios, ubicación, textos, escena
  *   cv-explorador.php  la página: shortcode, widget de Elementor, CSS y JS
+ *   cv-corazones.php   cuántas personas han guardado cada vino (sin saber quién), y el envío a Bodega
+ *   cv-toques.php      «Tres toques»: tres preguntas y cuatro vinos (shortcode y widget aparte)
  *
  *   inc/caracool-licencia.php  la licencia, el eco, el aviso y las peticiones a Bodega
  *
@@ -43,7 +45,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CARACOOL_VINOS_VERSION', '0.5.8' );
+define( 'CARACOOL_VINOS_VERSION', '0.6.0' );
 define( 'CARACOOL_VINOS_FILE', __FILE__ );
 define( 'CARACOOL_VINOS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CARACOOL_VINOS_URL', plugin_dir_url( __FILE__ ) );
@@ -57,7 +59,7 @@ final class Caracool_Vinos {
 	const OPCION = 'caracool_vinos_ajustes';
 
 	public function __construct() {
-		foreach ( array( 'cv-datos.php', 'cv-conexion.php', 'cv-ajustes.php', 'cv-explorador.php' ) as $modulo ) {
+		foreach ( array( 'cv-datos.php', 'cv-conexion.php', 'cv-ajustes.php', 'cv-explorador.php', 'cv-corazones.php', 'cv-toques.php' ) as $modulo ) {
 			$ruta = CARACOOL_VINOS_DIR . 'modules/' . $modulo;
 			if ( file_exists( $ruta ) ) {
 				require_once $ruta;

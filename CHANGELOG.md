@@ -1,5 +1,55 @@
 # Cambios
 
+## 0.6.0 · 29 de septiembre de 2026
+
+- **Tres toques.** Un bloque nuevo, aparte del explorador: tres preguntas
+  (el tipo, hasta cuánto y de aquí o de fuera) y salen cuatro vinos en
+  grande, con el resto de los que encajan justo debajo, sin botón. Cada
+  opción dice cuántos vinos quedan y las que dejarían la lista vacía salen
+  apagadas; lo elegido queda arriba para cambiarlo. Los cuatro de arriba
+  son los más guardados por la gente si hay cifras; si no, se reparten por
+  precio sin repetir vino, bodega ni zona. Las fichas son de texto (no hay
+  fotos). Se pone con el widget «Tres toques» o con
+  `[caracool_vinos_toques aqui="De Murcia" tramos="40, 70, 150"]`.
+- Los colores y las letras son los del Kit, con los mismos tokens que el
+  explorador, y el widget los cambia en su pestaña Estilo. Los tipos que
+  no están en la carta no salen; con generosos y dulces (Pura Cepa) salen
+  sus baldosas. Sin precios en Ajustes, la pregunta del precio no sale.
+- Lo da Caracool en Bodega, cliente a cliente (casilla «Tres toques» de la
+  pestaña Diseño). Si Bodega no ha dicho nada, se ve.
+- El corazón es el de «Mis vinos» y cuenta para los corazones de la gente.
+  Si el explorador está en la misma página, los dos se avisan y comparten
+  la lectura de la cuenta y el recuento de los guardados de antes.
+- Pruebas: el simulador mira el shortcode, los tramos, lo que da Bodega y
+  los datos del bloque, y `pruebas/toques.js` lo recorre en el navegador
+  (tres tamaños, otro Kit, corazones, junto al explorador, sin precios,
+  Pura Cepa y movimiento reducido).
+- **Los corazones de la gente.** Cada corazón que alguien pone o quita en
+  «Mis vinos» avisa a la web, y la web cuenta cuántas personas tienen
+  guardado cada vino. No sabe quiénes: no hay cookies ni cuenta, y la
+  dirección de cada visita no se guarda (el tope de avisos, 60 cada diez
+  minutos por dirección, va con una huella que caduca sola). Los vinos que
+  alguien tenía guardados de antes se cuentan una vez, la primera vez que
+  abre la página.
+- **La cifra, junto al corazón.** Cuando un vino llega a 3 personas, la
+  cifra sale pegada a su corazón, en la lista y en la ficha. La cuenta se
+  pide aparte al REST de la web (`GET /wp-json/caracool-vinos/v1/corazones`),
+  así que ninguna caché de página ni de Elementor la congela.
+- **«Más guardados».** Un botón nuevo delante de «Mis vinos» enseña solo
+  los vinos con la cifra a la vista, de más a menos, y se combina con los
+  demás filtros («los tintos más guardados»). Sale cuando hay al menos 3
+  vinos que llegan. Si los botones no caben en una línea con la vista y el
+  día y la noche, estos bajan a la de abajo.
+- **La pestaña Corazones** del panel enseña la lista, y en cada
+  comprobación de la carta la cuenta va a Bodega con la licencia (solo si
+  ha cambiado), para que Caracool vea los más guardados de cada casa y de
+  todas juntas.
+- Con «Mis vinos» apagado en Ajustes no se cuenta ni se enseña nada, y lo
+  contado se conserva.
+- Pruebas: el simulador de Bodega cuenta, quita, prueba el tope, los
+  avisos mal hechos y el envío a Bodega, y `pruebas/corazones.js` mira la
+  cifra, el botón, los avisos y los guardados de antes en el navegador.
+
 ## 0.5.8 · 28 de septiembre de 2026
 
 - **La esquina de la red, solo con los botones.** Abajo a la izquierda

@@ -193,6 +193,10 @@ modules/cv-datos.php        la carta vigente y la anterior, tal y como llegan de
 modules/cv-conexion.php     recoger la carta: aviso, rutina y botón; las pestañas Carta y Conexión
 modules/cv-ajustes.php      la pestaña Ajustes
 modules/cv-explorador.php   shortcode, datos del bloque y la clase del body
+modules/cv-corazones.php    los corazones de la gente: la cuenta, el REST, la pestaña Corazones y el envío a Bodega
+modules/cv-toques.php       «Tres toques»: el shortcode [caracool_vinos_toques] y sus datos
+modules/cv-widget-toques.php  el widget de Elementor «Tres toques»
+assets/cv-toques.css, .js   Tres toques en el navegador (estos sí se editan aquí: no salen del laboratorio)
 modules/cv-bloque.php       el markup del bloque (generado desde el laboratorio, no se edita)
 modules/cv-widget-elementor.php
 assets/cv-explorador.css    la hoja del bloque, acotada a .cv-explorador y con las variables del Kit
@@ -215,6 +219,8 @@ php pruebas/simular.php "CARTA COMPLETA SEPTIEMBRE 26.docx"   # Bodega publica y
 python3 -m http.server 8765 &                                 # desde la carpeta del plugin
 node pruebas/probar-web.js                                    # Chromium, Firefox y móvil, con capturas
 node pruebas/red.js                                           # la red, de día y de noche
+node pruebas/corazones.js                                     # la cifra, «Más guardados» y los avisos
+node pruebas/toques.js                                        # Tres toques: pasos, Kit, corazones, junto al explorador
 ```
 
 `simular.php` llama al de `caracool-bodega/pruebas/`, que carga los dos
@@ -236,6 +242,73 @@ dispara la recogida). Si Bodega publica su clave pública en
 `CARACOOL_BODEGA_CLAVE_PUBLICA`, la firma de la licencia se verifica
 también en local. En dominios de desarrollo (`localhost`, `.test`,
 `.local`) no se exige licencia.
+
+## Tres toques
+
+Un bloque aparte del explorador, para quien no sabe qué pedir: tres
+preguntas y cuatro vinos en grande, con el resto de los que encajan
+debajo.
+
+```
+[caracool_vinos_toques aqui="De Murcia" tramos="40, 70, 150"]
+```
+
+1. **El tipo**: tinto, blanco, rosado y burbujas (champagne, cava y
+   espumosos), y generosos y dulces u otros si la carta los tiene.
+2. **Hasta cuánto**, por los tramos del widget (40, 70 y 150 € de
+   fábrica). Sin precios en Ajustes, esta pregunta no sale.
+3. **De aquí o de fuera**: las zonas que van delante en Ajustes, el resto
+   de su país o fuera. `aqui` es cómo se llama la primera («De aquí» si no
+   se dice).
+
+Cada opción lleva cuántos vinos quedan y las que dejarían la lista vacía
+salen apagadas. Arriba van los cuatro más guardados por la gente, si hay
+cifras; si no, cuatro repartidos por precio sin repetir vino, bodega ni
+zona. Las fichas son de texto: zona, nombre, bodega, añada, uva, formato,
+puntos Parker si los hay, precio y corazón.
+
+Lo da Caracool en Bodega (casilla «Tres toques» de la pestaña Diseño); sin
+nada de Bodega, se ve. Los colores y las letras son los del Kit, con los
+mismos tokens que el explorador (`--cv-tinta`, `--cv-rojo`…) y los colores
+de cada tipo mezclando el del vino en la copa con los de la casa. Las
+esquinas, las del Kit si la web las lleva así. El widget cambia colores y
+letras en su pestaña Estilo, como el del explorador.
+
+El corazón guarda en el mismo sitio que «Mis vinos» y cuenta para los
+corazones de la gente. Con el explorador en la misma página se avisan con
+el evento `caracool-vinos-mis`, comparten una sola lectura de la cuenta
+(`window.__cvGente`) y solo uno cuenta los guardados de antes
+(`window.__cvContando`).
+
+## Los corazones de la gente
+
+Cada persona guarda sus vinos en su navegador («Mis vinos», sin cuenta).
+Desde la 0.6.0, el corazón avisa además a la web:
+
+```
+POST /wp-json/caracool-vinos/v1/corazon      { llaves: [...], sentido: 1 | -1 }
+GET  /wp-json/caracool-vinos/v1/corazones    { minimo: 3, lista: 3, n: { llave: personas } }
+```
+
+La web lleva un contador por vino en su tabla `{prefijo}caracool_vinos_corazones`
+(con el nombre, la bodega, el tipo y la añada, para saber qué vino era
+aunque salga de la carta). Solo cuentan las llaves de la carta vigente, sin
+bajar de cero. No se guarda la dirección de nadie: el tope (60 avisos cada
+diez minutos por dirección) va en un transitorio cuyo nombre es una huella
+de la dirección y de la franja de diez minutos. Los que alguien tenía
+guardados antes de la 0.6.0 se mandan juntos una vez
+(`caracool-vinos-mis-contados` en su navegador); mientras no entran, los
+cambios sueltos no se avisan, para no contar dos veces.
+
+El `GET` solo devuelve los vinos que llegan al mínimo (3, con el filtro
+`caracool_vinos_corazones_minimo`) y va sin caché. El explorador lo pide al
+arrancar: la página solo lleva la dirección, no la cuenta.
+
+La llave es la de la carta, con añada y formato, igual que en «Mis vinos»:
+si cambia la añada de un vino, en la web su cuenta empieza de nuevo. En
+Bodega no: allí se suma por vino, sin añada, y de todas las casas. La
+cuenta va a Bodega (`POST /caracool-bodega/v1/corazones/vinos`) tras cada
+comprobación de la carta que va bien, solo si ha cambiado.
 
 ## Las uvas y de dónde salen
 

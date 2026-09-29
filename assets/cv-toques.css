@@ -1,0 +1,195 @@
+/*
+ * Caracool Vinos · Tres toques
+ * ─────────────────────────────────────────────────────────────────────
+ * Tres preguntas (el tipo, hasta cuánto, de aquí o de fuera) y salen cuatro
+ * vinos en grande, con el resto debajo. Todo cuelga de .cv-toques para no
+ * tocar nada fuera del bloque.
+ *
+ * Los colores y las letras son los del Kit de Elementor, con los mismos
+ * tokens que el explorador (--cv-tinta, --cv-crema, --cv-rojo…) y el valor
+ * de El Churra de reserva por si el Kit no define alguno. El widget los
+ * puede cambiar en su pestaña Estilo. Los colores de cada tipo salen del
+ * color del vino en la copa (--cv-vino-*) mezclado con los de la casa. Las
+ * esquinas, si la web las da, son las de los botones y campos del Kit.
+ */
+.cv-toques{
+  --cv-tinta:var(--e-global-color-secondary,#241610);
+  --cv-crema:var(--e-global-color-cremaclara,#FAF5EC);
+  --cv-crema2:var(--e-global-color-crema,#F2E9DC);
+  --cv-arena:var(--e-global-color-arena,#E9DCC6);
+  --cv-texto:var(--e-global-color-text,#5C4433);
+  --cv-borde:var(--e-global-color-borde,#E3D8C6);
+  --cv-rojo:var(--e-global-color-primary,#93210B);
+  --cv-ocre:var(--e-global-color-ocremadera,#725841);
+  --cv-naranja:var(--e-global-color-accent,#E08B4F);
+  --cv-curva:cubic-bezier(.22,1,.36,1);
+  --cv-didona:var(--e-global-typography-primary-font-family,"Bodoni Moda"),Georgia,serif;
+  --cv-sans:var(--e-global-typography-text-font-family,Inter),system-ui,sans-serif;
+  --cv-vino-tinto:#E0435A;--cv-vino-blanco:#F2DC8A;--cv-vino-rosado:#F2A0A6;--cv-vino-espumoso:#FBECB4;
+  /* derivados: el papel claro de las fichas y el color de cada tipo */
+  --tq-papel:color-mix(in srgb,var(--cv-crema) 45%,#fff);
+  --tq-caja:var(--cv-radio-campo,18px);
+  --tq-boton:var(--cv-radio-boton,999px);
+  --tq-tinto:color-mix(in srgb,var(--cv-vino-tinto) 45%,var(--cv-tinta));
+  --tq-blanco:color-mix(in srgb,var(--cv-vino-blanco) 45%,var(--cv-crema));
+  --tq-rosado:color-mix(in srgb,var(--cv-vino-rosado) 45%,var(--cv-crema));
+  --tq-burbujas:color-mix(in srgb,var(--cv-vino-espumoso) 55%,var(--cv-arena));
+  --tq-generoso:color-mix(in srgb,var(--cv-naranja) 30%,var(--cv-crema));
+  --tq-otros:var(--cv-crema2);
+  /* z-index: por encima de lo que la página tenga fijo detrás (el globo del
+     explorador en el diseño «mundo»), con su propio fondo */
+  position:relative;z-index:1;isolation:isolate;overflow:hidden;scroll-margin-top:110px;
+  background:var(--cv-crema);color:var(--cv-tinta);
+  font:400 16px/1.55 var(--cv-sans);-webkit-font-smoothing:antialiased;
+  padding:clamp(28px,6vh,64px) clamp(18px,4vw,48px) clamp(40px,8vh,80px);
+  transition:background-color .6s ease;
+}
+.cv-toques *,.cv-toques *::before,.cv-toques *::after{box-sizing:border-box}
+/* el fondo toma un punto del color del tipo elegido */
+.cv-toques[data-tipo=tinto]{background:color-mix(in srgb,var(--cv-vino-tinto) 7%,var(--cv-crema))}
+.cv-toques[data-tipo=blanco]{background:color-mix(in srgb,var(--cv-vino-blanco) 16%,var(--cv-crema))}
+.cv-toques[data-tipo=rosado]{background:color-mix(in srgb,var(--cv-vino-rosado) 12%,var(--cv-crema))}
+.cv-toques[data-tipo=burbujas]{background:color-mix(in srgb,var(--cv-vino-espumoso) 26%,var(--cv-crema))}
+.cv-toques[data-tipo=generoso]{background:color-mix(in srgb,var(--cv-naranja) 9%,var(--cv-crema))}
+
+/* El Kit estila todos los botones (mayúsculas, fondo, radio y color al
+   pasar): aquí cada botón lleva lo suyo, y todas las reglas llevan la
+   clase de la raíz dos veces para ganar también en :hover y :focus */
+.cv-toques.cv-toques button{font:inherit;color:inherit;cursor:pointer;text-transform:none;letter-spacing:normal;box-shadow:none;border-radius:0;line-height:normal;background:none;border:0;padding:0;margin:0;min-height:0;width:auto;text-decoration:none;transition:none;white-space:normal;text-align:left}
+.cv-toques.cv-toques h2,.cv-toques.cv-toques h3,.cv-toques.cv-toques p{margin:0;text-transform:none;letter-spacing:normal}
+.cv-toques.cv-toques ul{margin:0;padding:0;list-style:none}
+.cv-toques [hidden]{display:none!important}
+.cv-toques.cv-toques :focus-visible{outline:2px solid var(--cv-rojo);outline-offset:3px}
+.cv-toques.cv-toques h2:focus{outline:none}
+.cv-toques--vacio{padding:40px 0;color:var(--cv-texto);text-align:center}
+
+.cv-toques.cv-toques .tq-dentro{position:relative;z-index:1;max-width:1100px;margin:0 auto}
+.cv-toques.cv-toques .tq-ola{position:absolute;inset:0;z-index:2;pointer-events:none}
+
+/* lo ya elegido, arriba, para cambiarlo */
+.cv-toques.cv-toques .tq-hilo{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:clamp(20px,4vh,36px)}
+.cv-toques.cv-toques .tq-hilo:empty{display:none}
+.cv-toques.cv-toques .tq-hilo button{min-height:40px;padding:0 14px 0 12px;border-radius:var(--tq-boton);border:1px solid var(--cv-borde);background:var(--tq-papel);font-size:14px;display:inline-flex;align-items:center;gap:8px;color:var(--cv-tinta)}
+.cv-toques.cv-toques .tq-hilo button:hover{border-color:var(--cv-tinta)}
+.cv-toques.cv-toques .tq-hilo i{width:10px;height:10px;border-radius:50%;border:2px solid var(--cv-rojo);flex:none}
+.cv-toques.cv-toques .tq-hilo i.lleno{border:0;background:var(--tq-c,var(--cv-rojo))}
+.cv-toques.cv-toques .tq-hilo u{color:var(--cv-texto);font-size:12px;margin-left:4px;text-underline-offset:3px}
+
+.cv-toques.cv-toques .tq-pasos{display:flex;gap:6px;align-items:center;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--cv-texto);margin:0 0 14px}
+.cv-toques.cv-toques .tq-pasos span{width:26px;height:3px;border-radius:3px;background:var(--cv-borde)}
+.cv-toques.cv-toques .tq-pasos span.on{background:var(--cv-rojo)}
+
+.cv-toques.cv-toques .tq-paso{animation:tq-entra .32s var(--cv-curva) both}
+.cv-toques.cv-toques .tq-paso.sale{animation:tq-sale .18s ease-in both}
+@keyframes tq-entra{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes tq-sale{to{opacity:0;transform:translateY(-10px)}}
+.cv-toques.cv-toques .tq-pregunta{font:500 clamp(36px,6vw,72px)/1.02 var(--cv-didona);letter-spacing:-.01em;color:var(--cv-tinta);margin:0 0 clamp(24px,4vh,40px)}
+.cv-toques.cv-toques .tq-pregunta em{font-style:italic;color:var(--cv-rojo)}
+
+/* las opciones: baldosas grandes */
+.cv-toques.cv-toques .tq-opciones{display:grid;grid-template-columns:repeat(var(--tq-cols,4),minmax(0,1fr));gap:14px}
+.cv-toques.cv-toques .tq-op{position:relative;min-height:220px;border-radius:var(--tq-caja);padding:20px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:var(--tq-papel);border:1px solid var(--cv-borde);color:var(--cv-tinta);transition:transform .2s ease,box-shadow .2s ease,border-color .2s}
+.cv-toques.cv-toques .tq-op:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 14px 30px color-mix(in srgb,var(--cv-tinta) 14%,transparent);border-color:transparent}
+.cv-toques.cv-toques .tq-op:active:not(:disabled){transform:translateY(-1px) scale(.99)}
+.cv-toques.cv-toques .tq-op:disabled{opacity:.38;cursor:default}
+.cv-toques.cv-toques .tq-op b{position:relative;z-index:1;font:500 clamp(24px,2.6vw,32px)/1.05 var(--cv-didona)}
+.cv-toques.cv-toques .tq-op small{position:relative;z-index:1;display:block;margin-top:6px;font-size:13px;color:var(--cv-texto)}
+.cv-toques.cv-toques .tq-op small span{display:block}
+.cv-toques.cv-toques .tq-op .tq-fig{position:absolute;top:18px;right:16px;height:62%;z-index:0}
+.cv-toques.cv-toques .tq-op .tq-fig svg{height:100%;width:auto;display:block}
+.cv-toques.cv-toques .tq-op--tinto{background:var(--tq-tinto);color:var(--cv-crema);border-color:transparent}
+.cv-toques.cv-toques .tq-op--tinto small{color:color-mix(in srgb,var(--cv-crema) 78%,transparent)}
+.cv-toques.cv-toques .tq-op--blanco{background:var(--tq-blanco);border-color:transparent}
+.cv-toques.cv-toques .tq-op--rosado{background:var(--tq-rosado);border-color:transparent}
+.cv-toques.cv-toques .tq-op--burbujas{background:var(--tq-burbujas);border-color:transparent}
+.cv-toques.cv-toques .tq-op--generoso{background:var(--tq-generoso);border-color:transparent}
+.cv-toques.cv-toques .tq-op--otros{background:var(--tq-otros);border-color:transparent}
+.cv-toques.cv-toques .tq-burbuja{position:absolute;bottom:-10px;width:8px;height:8px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--cv-tinta) 40%,transparent);background:color-mix(in srgb,#fff 35%,transparent);animation:tq-sube 3.2s linear infinite}
+@keyframes tq-sube{from{transform:translateY(0);opacity:0}15%{opacity:1}to{transform:translateY(-230px);opacity:0}}
+.cv-toques.cv-toques .tq-op--precio b{font-size:clamp(28px,3.2vw,42px)}
+.cv-toques.cv-toques .tq-barra{position:absolute;left:20px;right:20px;top:22px;height:6px;border-radius:6px;background:var(--cv-crema2);overflow:hidden}
+.cv-toques.cv-toques .tq-barra i{position:absolute;top:0;bottom:0;background:var(--cv-rojo);border-radius:6px}
+.cv-toques.cv-toques .tq-op--igual{background:transparent;border-style:dashed}
+
+/* las siluetas, del color de cada tipo */
+.cv-toques.cv-toques .tq-botella{fill:var(--tq-b,var(--cv-tinta))}
+.cv-toques.cv-toques .tq-etiqueta{fill:var(--tq-e,color-mix(in srgb,var(--cv-crema) 88%,transparent))}
+.cv-toques.cv-toques .tq-capsula{fill:color-mix(in srgb,var(--cv-vino-espumoso) 45%,var(--cv-ocre))}
+.cv-toques.cv-toques .tq-op--tinto{--tq-b:var(--cv-crema);--tq-e:var(--tq-tinto)}
+.cv-toques.cv-toques .tq-op--blanco{--tq-b:color-mix(in srgb,var(--cv-vino-blanco) 70%,var(--cv-tinta))}
+.cv-toques.cv-toques .tq-op--rosado{--tq-b:color-mix(in srgb,var(--cv-vino-rosado) 75%,var(--cv-tinta))}
+.cv-toques.cv-toques .tq-op--burbujas{--tq-b:color-mix(in srgb,var(--cv-tinta) 85%,var(--cv-vino-espumoso))}
+.cv-toques.cv-toques .tq-op--generoso{--tq-b:color-mix(in srgb,var(--cv-naranja) 55%,var(--cv-tinta))}
+.cv-toques.cv-toques .tq-op--otros{--tq-b:var(--cv-ocre)}
+
+.cv-toques.cv-toques .tq-boton{min-height:48px;padding:0 22px;border-radius:var(--tq-boton);border:1px solid var(--cv-tinta);font-weight:500;font-size:14px;letter-spacing:.02em;color:var(--cv-tinta);display:inline-flex;align-items:center;transition:background .2s ease,color .2s ease,border-color .2s ease}
+.cv-toques.cv-toques .tq-boton:hover{background:var(--cv-tinta);color:var(--cv-crema)}
+.cv-toques.cv-toques .tq-boton--lleno{background:var(--cv-rojo);border-color:var(--cv-rojo);color:var(--cv-crema)}
+.cv-toques.cv-toques .tq-boton--lleno:hover{background:var(--cv-naranja);border-color:var(--cv-naranja);color:var(--cv-crema)}
+.cv-toques.cv-toques .tq-atras{margin-top:22px}
+
+/* el resultado: sin fotos, la ficha es de texto */
+.cv-toques.cv-toques .tq-cab{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;margin-bottom:26px}
+.cv-toques.cv-toques .tq-cab p{color:var(--cv-texto)}
+.cv-toques.cv-toques .tq-destacados{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.cv-toques.cv-toques .tq-ficha{--tono:var(--cv-tinta);position:relative;background:var(--tq-papel);border:1px solid var(--cv-borde);border-radius:var(--tq-caja);padding:30px 26px 22px;display:flex;flex-direction:column;animation:tq-entra .4s var(--cv-curva) both}
+.cv-toques.cv-toques .tq-ficha::before{content:"";position:absolute;top:0;left:26px;width:44px;height:5px;border-radius:0 0 5px 5px;background:var(--tono)}
+.cv-toques.cv-toques .tq-ficha--tinto{--tono:var(--tq-tinto)}
+.cv-toques.cv-toques .tq-ficha--blanco{--tono:color-mix(in srgb,var(--cv-vino-blanco) 70%,var(--cv-tinta))}
+.cv-toques.cv-toques .tq-ficha--rosado{--tono:color-mix(in srgb,var(--cv-vino-rosado) 80%,var(--cv-tinta))}
+.cv-toques.cv-toques .tq-ficha--burbujas{--tono:color-mix(in srgb,var(--cv-vino-espumoso) 55%,var(--cv-ocre))}
+.cv-toques.cv-toques .tq-ficha--generoso{--tono:var(--cv-naranja)}
+.cv-toques.cv-toques .tq-ficha--otros{--tono:var(--cv-ocre)}
+.cv-toques.cv-toques .tq-zona{margin:0 0 10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--cv-texto)}
+.cv-toques.cv-toques .tq-ficha h3{font:500 clamp(28px,3vw,38px)/1.04 var(--cv-didona);margin:0 0 6px;color:var(--cv-tinta)}
+.cv-toques.cv-toques .tq-bodega{color:var(--cv-texto)}
+.cv-toques.cv-toques .tq-meta{margin-top:4px;font-size:14px}
+.cv-toques.cv-toques .tq-rp{font:600 11px/1 var(--cv-sans);letter-spacing:.06em;padding:3px 6px;border-radius:4px;background:var(--cv-crema2);color:var(--cv-tinta);margin-left:6px;vertical-align:2px}
+.cv-toques.cv-toques .tq-pie{margin-top:auto;padding-top:16px;border-top:1px solid var(--cv-borde);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cv-toques.cv-toques .tq-ficha .tq-pie{margin-top:22px}
+.cv-toques.cv-toques .tq-precio{font:500 32px/1 var(--cv-didona);color:var(--cv-tinta)}
+
+/* el corazón, con la cifra de la gente cuando la hay */
+.cv-toques.cv-toques .tq-corazon{flex:none;min-width:44px;height:44px;padding:0 12px;border-radius:var(--tq-boton);border:1px solid var(--cv-borde);background:var(--tq-papel);color:var(--cv-texto);display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-left:auto;transition:color .25s ease,border-color .25s ease}
+.cv-toques.cv-toques .tq-corazon svg{width:18px;height:18px;display:block}
+.cv-toques.cv-toques .tq-corazon svg path{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round;transition:fill .25s ease}
+.cv-toques.cv-toques .tq-corazon small{font:500 13px/1 var(--cv-sans);font-variant-numeric:tabular-nums}
+.cv-toques.cv-toques .tq-corazon:hover{border-color:var(--cv-rojo);color:var(--cv-rojo)}
+.cv-toques.cv-toques .tq-corazon.on{color:var(--cv-rojo);border-color:var(--cv-rojo)}
+.cv-toques.cv-toques .tq-corazon.on svg path{fill:currentColor}
+.cv-toques.cv-toques .tq-corazon.late{animation:tq-late .5s var(--cv-curva)}
+@keyframes tq-late{0%{transform:scale(1)}40%{transform:scale(1.2)}100%{transform:scale(1)}}
+
+/* el resto, directamente debajo, como en una carta */
+.cv-toques.cv-toques .tq-resto-t{font:500 clamp(26px,3vw,34px)/1.1 var(--cv-didona);margin:52px 0 6px;color:var(--cv-tinta)}
+.cv-toques.cv-toques .tq-resto-nota{margin:0 0 14px;color:var(--cv-texto);font-size:14px}
+.cv-toques.cv-toques .tq-resto{border-top:1px solid var(--cv-borde)}
+.cv-toques.cv-toques .tq-resto li{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px 18px;padding:14px 2px;border-bottom:1px solid var(--cv-borde)}
+.cv-toques.cv-toques .tq-resto b{display:block;font:500 20px/1.15 var(--cv-didona);color:var(--cv-tinta)}
+.cv-toques.cv-toques .tq-resto small{display:block;margin-top:3px;color:var(--cv-texto);font-size:13.5px}
+.cv-toques.cv-toques .tq-resto .tq-precio{font-size:21px;white-space:nowrap}
+.cv-toques.cv-toques .tq-acciones{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
+.cv-toques.cv-toques .tq-nada{padding:24px;border:1px dashed var(--cv-borde);border-radius:var(--tq-caja);color:var(--cv-texto)}
+
+@media (max-width:900px){
+  .cv-toques.cv-toques .tq-opciones{--tq-cols:2!important}
+  .cv-toques.cv-toques .tq-op--igual:nth-child(odd):last-child{grid-column:span 2;min-height:72px}
+  .cv-toques.cv-toques .tq-op{min-height:150px}
+}
+@media (max-width:520px){
+  .cv-toques.cv-toques .tq-hilo u{display:none}
+  .cv-toques.cv-toques .tq-op{min-height:132px;padding:16px}
+  .cv-toques.cv-toques .tq-op .tq-fig{height:56%}
+  .cv-toques.cv-toques .tq-op b,.cv-toques.cv-toques .tq-op small{max-width:calc(100% - 40px)}
+  .cv-toques.cv-toques .tq-destacados{grid-template-columns:1fr;gap:12px}
+  .cv-toques.cv-toques .tq-ficha{padding:24px 20px 14px}
+  .cv-toques.cv-toques .tq-ficha h3{font-size:27px}
+  .cv-toques.cv-toques .tq-ficha .tq-pie{margin-top:14px;padding-top:12px}
+  .cv-toques.cv-toques .tq-precio{font-size:26px}
+  .cv-toques.cv-toques .tq-resto li{gap:4px 12px}
+  .cv-toques.cv-toques .tq-resto b{font-size:18px}
+  .cv-toques.cv-toques .tq-resto .tq-precio{font-size:19px}
+}
+@media (prefers-reduced-motion:reduce){
+  .cv-toques,.cv-toques *,.cv-toques *::before,.cv-toques *::after{animation:none!important;transition:none!important}
+}

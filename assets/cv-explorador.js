@@ -450,14 +450,98 @@
   function esFav(v) { return !!favs[v.llave]; }
   function cuantosFavs() { return VINOS.filter(esFav).length; }
   var CLAVE_AVISO_MIS = 'caracool-vinos-mis-aviso';
+
+  /* ── Los corazones de la gente ─────────────────────────────────────
+     Cuántas personas han guardado cada vino: la web lo cuenta sin saber
+     quién. La cuenta llega aparte, por el REST, para que ninguna caché de
+     página la congele, y solo trae los vinos que llegan al mínimo. Cada
+     corazón que se pone o se quita avisa a la web; los que alguien tenía
+     guardados de antes se cuentan una vez (CLAVE_CONTADOS). Sin memoria en
+     el navegador no se avisa de nada: el corazón no duraría y la cuenta
+     quedaría mal. En el laboratorio no hay CFG: no se cuenta nada. */
+  var memoria = (function () { try { localStorage.setItem('caracool-vinos-t', '1'); localStorage.removeItem('caracool-vinos-t'); return true; } catch (e) { return false; } }());
+  var CZ = (typeof CFG !== 'undefined' && CFG.favoritos && CFG.corazones && CFG.corazones.url && window.fetch) ? CFG.corazones : null;
+  var gente = {};
+  var CLAVE_CONTADOS = 'caracool-vinos-mis-contados';
+  function personas(v) { return gente[v.llave] || 0; }
+  function seVe(v) { return !!CZ && personas(v) >= CZ.minimo; }
+  function contados() { try { return localStorage.getItem(CLAVE_CONTADOS) === '1'; } catch (e) { return false; } }
+  function avisarGente(llaves, sentido) {
+    if (!CZ || !memoria || !llaves.length) { return Promise.resolve(false); }
+    return fetch(CZ.url + 'corazon', { method: 'POST', keepalive: true, credentials: 'omit', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ llaves: llaves.slice(0, 200), sentido: sentido }) })
+      .then(function (r) { return r.ok; }, function () { return false; });
+  }
+  // los de antes: una vez, con los que haya guardados ahora
+  // (si en la página también está «Tres toques», lo hace uno de los dos: window.__cvContando)
+  function contarLosDeAntes() {
+    if (!CZ || !memoria || contados() || window.__cvContando) { return; }
+    window.__cvContando = true;
+    var mias = Object.keys(favs);
+    var hecho = function () { try { localStorage.setItem(CLAVE_CONTADOS, '1'); } catch (e) {} };
+    if (!mias.length) { hecho(); return; }
+    avisarGente(mias, 1).then(function (ok) { if (ok) { hecho(); } else { window.__cvContando = false; } });
+  }
+  // un cambio en mis vinos: se cuenta aquí al momento y se avisa a la web
+  // (si los de antes aún no han entrado, ya entrarán con ellos)
+  function moverGente(llaves, sentido) {
+    if (!llaves.length) { return; }
+    // a «Tres toques», si está en la página, para que pinte igual sus corazones
+    try { window.dispatchEvent(new CustomEvent('caracool-vinos-mis', { detail: { de: raiz, llaves: llaves, sentido: sentido } })); } catch (e) {}
+    if (!CZ) { return; }
+    llaves.forEach(function (k) { gente[k] = Math.max(0, (gente[k] || 0) + sentido); });
+    if (contados()) { avisarGente(llaves, sentido); }
+  }
+  // y al revés: lo que cambie «Tres toques» en la misma página
+  window.addEventListener('caracool-vinos-mis', function (e) {
+    var d = e.detail || {};
+    if (d.de === raiz) { return; }
+    favs = {}; try { (JSON.parse(localStorage.getItem(CLAVE_FAVS) || '[]')).forEach(function (k) { favs[k] = 1; }); } catch (x) {}
+    if (CZ && d.llaves && d.sentido) { d.llaves.forEach(function (k) { gente[k] = Math.max(0, (gente[k] || 0) + d.sentido); }); }
+    Array.prototype.forEach.call(raiz.querySelectorAll('.corazon[data-llave]'), function (b) { var v = porLlave[b.dataset.llave]; if (v) { b.classList.toggle('on', esFav(v)); numeroCorazon(b, v); } });
+    chipMis(); chipGente();
+    if (filtro.mis === 'mis' || filtro.top) { aplicar(); }
+  });
+  function numeroCorazon(b, v) {
+    var n = b.querySelector('.corazon__n'), ve = seVe(v);
+    b.classList.toggle('con-n', ve);
+    if (n) { n.textContent = ve ? personas(v) : ''; }
+    var t = esFav(v) ? 'Quitar de mis vinos' : 'Guardar en mis vinos';
+    if (ve) { t += ' · ' + personas(v) + ' personas lo han guardado'; }
+    b.title = t; b.setAttribute('aria-label', t);
+  }
+  function pintarGente() {
+    Array.prototype.forEach.call(raiz.querySelectorAll('.corazon[data-llave]'), function (b) {
+      var v = porLlave[b.dataset.llave]; if (v) { numeroCorazon(b, v); }
+    });
+    chipGente();
+    if (filtro.top) { aplicar(); }
+  }
+  var porLlave = {}; VINOS.forEach(function (v) { if (v.llave && !porLlave[v.llave]) { porLlave[v.llave] = v; } });
+  function traerGente() {
+    if (!CZ) { return; }
+    // una sola petición aunque en la página esté también «Tres toques»
+    if (!window.__cvGente) { window.__cvGente = fetch(CZ.url + 'corazones', { credentials: 'omit', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; }); }
+    window.__cvGente
+      .then(function (d) {
+        if (!d || !d.n) { return; }
+        if (d.minimo) { CZ.minimo = +d.minimo; }
+        if (d.lista) { CZ.lista = +d.lista; }
+        Object.keys(d.n).forEach(function (k) { gente[k] = Math.max(+d.n[k] || 0, gente[k] || 0); });
+        pintarGente();
+      });
+  }
+
   function alternarFav(v, boton) {
     if (favs[v.llave]) { delete favs[v.llave]; } else { favs[v.llave] = 1; }
     guardarFavs();
+    moverGente([v.llave], esFav(v) ? 1 : -1);
     // todos los corazones de ese vino, estén donde estén
     Array.prototype.forEach.call(document.querySelectorAll('.corazon[data-llave="' + v.llave + '"]'), function (b) {
       b.classList.toggle('on', esFav(v));
+      numeroCorazon(b, v);
       if (b === boton && esFav(v)) { b.classList.remove('late'); void b.getBoundingClientRect(); b.classList.add('late'); }
     });
+    chipGente();
     chipMis();
     if (filtro.mis === 'mis' && !esFav(v)) { aplicar(); }
     if (esFav(v)) {
@@ -470,8 +554,8 @@
   }
   function botonCorazon(v) {
     var b = document.createElement('button'); b.type = 'button'; b.className = 'corazon' + (esFav(v) ? ' on' : '');
-    b.dataset.llave = v.llave; b.innerHTML = CORAZON;
-    b.title = 'Guardar en mis vinos'; b.setAttribute('aria-label', 'Guardar en mis vinos');
+    b.dataset.llave = v.llave; b.innerHTML = CORAZON + '<small class="corazon__n"></small>';
+    numeroCorazon(b, v);
     b.addEventListener('click', function (e) { e.stopPropagation(); alternarFav(v, b); });
     return b;
   }
@@ -508,7 +592,7 @@
   }
 
   /* ── Filtros ───────────────────────────────────────────────────────── */
-  var filtro = { tipo: '', uva: '', bodega: '', zona: '', precio: '', parker: '', pais: '', texto: '', mis: compartida ? 'compartida' : '' };
+  var filtro = { tipo: '', uva: '', bodega: '', zona: '', precio: '', parker: '', pais: '', texto: '', mis: compartida ? 'compartida' : '', top: false };
   // el desplegable de Parker solo existe si algún vino trae puntos
   var hayParker = VINOS.some(function (v) { return v.parker; });
   document.getElementById('cv-f-parker').closest('.campo').classList.toggle('oculto', !hayParker);
@@ -538,11 +622,32 @@
   chipMisEl.title = 'Los vinos que has guardado'; chipMisEl.setAttribute('aria-pressed', 'false');
   chipMisEl.addEventListener('click', function () {
     filtro.mis = (filtro.mis === 'mis') ? '' : 'mis';
+    if (filtro.mis === 'mis') { filtro.top = false; }
     if (filtro.mis === 'mis' && compartida) { compartida = null; if (location.hash) { history.replaceState(null, '', location.pathname + location.search); } }
     cerrarFicha(false); aplicar();
     if (filtro.mis === 'mis' && window.innerWidth <= 900) { document.getElementById('cv-panel').scrollIntoView({ behavior: reducido ? 'auto' : 'smooth', block: 'start' }); }
   });
   document.getElementById('cv-mis-sitio').appendChild(chipMisEl);
+  // «Más guardados»: delante de Mis vinos, solo cuando hay unos cuantos vinos con la cifra a la vista
+  var PODIO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 20.5v-6h4.5v6Z"/><path d="M9.75 20.5V8h4.5v12.5Z"/><path d="M15 20.5v-9h4.5v9Z"/></svg>';
+  var chipGenteEl = document.createElement('button'); chipGenteEl.type = 'button'; chipGenteEl.className = 'mis-boton gente-boton oculto';
+  chipGenteEl.innerHTML = PODIO + 'Más guardados';
+  chipGenteEl.title = 'Los vinos que más personas han guardado'; chipGenteEl.setAttribute('aria-pressed', 'false');
+  chipGenteEl.addEventListener('click', function () {
+    filtro.top = !filtro.top;
+    if (filtro.top && filtro.mis === 'mis') { filtro.mis = ''; }
+    cerrarFicha(false); aplicar();
+    if (filtro.top && window.innerWidth <= 900) { document.getElementById('cv-panel').scrollIntoView({ behavior: reducido ? 'auto' : 'smooth', block: 'start' }); }
+  });
+  // va detrás en el marcado (el primer .mis-boton sigue siendo Mis vinos) y delante a la vista (order:-1)
+  document.getElementById('cv-mis-sitio').appendChild(chipGenteEl);
+  function chipGente() {
+    var hay = !!CZ && VINOS.filter(seVe).length >= (CZ.lista || 3);
+    if (!hay && filtro.top) { filtro.top = false; }
+    chipGenteEl.classList.toggle('oculto', !hay);
+    chipGenteEl.classList.toggle('on', !!filtro.top);
+    chipGenteEl.setAttribute('aria-pressed', filtro.top ? 'true' : 'false');
+  }
   function chipMis() {
     var n = cuantosFavs();
     chipMisEl.classList.toggle('oculto', !CFG.favoritos);
@@ -670,6 +775,7 @@
 
   function pasa(v, salvo) {
     if (filtro.mis === 'mis' && !esFav(v)) { return false; }
+    if (filtro.top && !seVe(v)) { return false; }
     if (filtro.mis === 'compartida' && !(compartida && compartida[v.llave])) { return false; }
     if (salvo !== 'tipo' && !deTipo(v, filtro.tipo)) { return false; }
     if (salvo !== 'pais' && filtro.pais && v.iso !== filtro.pais) { return false; }
@@ -730,6 +836,7 @@
     document.getElementById('cv-f-texto').classList.toggle('on', !!filtro.texto);
     pintarCampos();
     chipMis();
+    chipGente();
 
     pintarActivos();
 
@@ -839,14 +946,26 @@
       var c2 = document.createElement('button'); c2.type = 'button'; c2.className = 'compartir'; c2.innerHTML = CORAZON.replace('<svg', '<svg style="width:13px;height:13px"') + 'Compartir';
       c2.addEventListener('click', function () { compartir(Object.keys(favs), 'Mis ' + cuantosFavs() + ' vinos'); });
       var q = document.createElement('button'); q.type = 'button'; q.className = 'limpiar'; q.textContent = 'Quitar todos';
-      q.addEventListener('click', function () { favs = {}; guardarFavs(); chipMis(); aplicar(); avisar('Mis vinos, vacío'); });
+      q.addEventListener('click', function () { var eran = Object.keys(favs); favs = {}; guardarFavs(); moverGente(eran, -1); chipMis(); aplicar(); avisar('Mis vinos, vacío'); });
       acc.appendChild(c2); acc.appendChild(q); c.appendChild(acc);
     }
     return c;
   }
+  function cabeceraGente(n) {
+    var c = document.createElement('div'); c.className = 'mis-cab';
+    c.innerHTML = '<div><h3>Los más guardados</h3><p>' + (n === 1 ? 'El vino' : 'Los ' + n + ' vinos') + ' que más personas tienen en «Mis vinos», de más a menos. La cifra va junto al corazón.</p></div>';
+    return c;
+  }
   function pintarLista(lista) {
     listaEl.innerHTML = '';
-    if (filtro.mis === 'mis') {
+    var agrupar = !filtro.top;
+    if (filtro.top) {
+      listaEl.appendChild(cabeceraGente(lista.length));
+      if (!lista.length) {
+        listaEl.insertAdjacentHTML('beforeend', '<p class="vacio">Con esos filtros no queda ninguno de los más guardados.</p>');
+        return;
+      }
+    } else if (filtro.mis === 'mis') {
       listaEl.appendChild(cabeceraMis(cuantosFavs()));
       if (!cuantosFavs()) {
         listaEl.insertAdjacentHTML('beforeend', '<div class="mis-vacio">' + CORAZON + '<b>Todavía no hay ninguno</b>Marca con el corazón los vinos que te gusten y aquí los tendrás, con su precio, cuando vuelvas a la carta.</div>');
@@ -861,6 +980,7 @@
       return;
     }
     lista = ordenar(lista);
+    if (filtro.top) { lista = lista.map(function (v, i) { return { v: v, i: i }; }).sort(function (a, b) { return personas(b.v) - personas(a.v) || a.i - b.i; }).map(function (x) { return x.v; }); }
     var frag = document.createDocumentFragment(), ultima = null;
     if (filtro.mis === 'compartida') {
       var aviso = document.createElement('div'); aviso.className = 'compartida';
@@ -868,14 +988,14 @@
       var g1 = document.createElement('button'); g1.type = 'button'; g1.className = 'compartir'; g1.innerHTML = CORAZON.replace('<svg', '<svg style="width:13px;height:13px"') + 'Guardar como mis vinos';
       var todosYa = lista.every(esFav);
       if (todosYa) { g1.disabled = true; g1.innerHTML = CORAZON.replace('<svg', '<svg style="width:13px;height:13px"') + 'Ya están en mis vinos'; g1.style.opacity = '.5'; }
-      g1.addEventListener('click', function () { lista.forEach(function (v) { favs[v.llave] = 1; }); guardarFavs(); chipMis(); pintarLista(lista); avisar('Guardados en mis vinos'); });
+      g1.addEventListener('click', function () { var nuevas = []; lista.forEach(function (v) { if (!favs[v.llave]) { nuevas.push(v.llave); } favs[v.llave] = 1; }); guardarFavs(); moverGente(nuevas, 1); chipMis(); pintarLista(lista); avisar('Guardados en mis vinos'); });
       aviso.appendChild(g1);
       frag.appendChild(aviso);
     }
     var ultimoGrupo = null;
     lista.forEach(function (v) {
       var clave = (v.seccion || v.zona || '');
-      if (clave !== ultima) {
+      if (agrupar && clave !== ultima) {
         ultima = clave; ultimoGrupo = null;
         var g = document.createElement('div'); g.className = 'grupo';
         g.innerHTML = '<h3>' + (legible(clave) || 'Sin zona') + '</h3><small>' + (v.pais || '') + '</small>';
@@ -883,7 +1003,7 @@
       }
       // el subrótulo de la carta: la bodega («Bodega Casa Castillo») o el
       // estilo («Grandes Maisons»), tal y como lo agrupa el sumiller
-      if ((v.grupo || '') !== ultimoGrupo) {
+      if (agrupar && (v.grupo || '') !== ultimoGrupo) {
         ultimoGrupo = v.grupo || '';
         if (ultimoGrupo) { var h = document.createElement('h4'); h.className = 'subgrupo'; h.textContent = ultimoGrupo; frag.appendChild(h); }
       }
@@ -992,7 +1112,7 @@
     });
   }
   function vaciarFiltro() {
-    filtro = { tipo: '', uva: '', bodega: '', zona: '', precio: '', pais: '', texto: '', mis: '' };
+    filtro = { tipo: '', uva: '', bodega: '', zona: '', precio: '', pais: '', texto: '', mis: '', top: false };
     document.getElementById('cv-f-texto').value = '';
   }
 
@@ -1290,7 +1410,7 @@
       else if (filtro.bodega && indice['b:' + filtro.bodega] !== undefined) { seleccion = indice['b:' + filtro.bodega]; }
       else if (filtro.zona) { var zid = Object.keys(indice).filter(function (k) { return k.indexOf('z:') === 0 && k.split('|')[1] === filtro.zona; })[0]; if (zid) { seleccion = indice[zid]; } }
       else if (filtro.pais && indice['p:' + filtro.pais] !== undefined) { seleccion = indice['p:' + filtro.pais]; }
-      var hayFiltro = filtro.tipo || filtro.uva || filtro.bodega || filtro.zona || filtro.pais || filtro.precio || filtro.parker || filtro.texto || filtro.mis;
+      var hayFiltro = filtro.tipo || filtro.uva || filtro.bodega || filtro.zona || filtro.pais || filtro.precio || filtro.parker || filtro.texto || filtro.mis || filtro.top;
       pasan = null;
       if (hayFiltro) {
         pasan = {};
@@ -1632,6 +1752,9 @@
   red = hayRed ? redModulo() : null; // sin botón de Red, la red ni se monta
   if (red && modo() === 'red') { red.mostrar(); }
   if (red) { red.actualizar(); }
+
+  traerGente();
+  contarLosDeAntes();
 
   (function () {
     var n = cuantosFavs();

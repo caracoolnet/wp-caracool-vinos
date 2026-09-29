@@ -484,6 +484,21 @@
 .cv-explorador.cv-explorador .corazon.on svg path{fill:currentColor}
 .cv-explorador.cv-explorador .corazon.late{animation:cv-corazon-late .5s var(--cv-curva)}
 @keyframes cv-corazon-late{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+/* la cifra de la gente: cuántas personas han guardado el vino, a partir de
+   un mínimo; va pegada al corazón, pequeña y apagada, para no competir con
+   el precio */
+.cv-explorador.cv-explorador .corazon__n{display:none;font:500 12px/1 var(--cv-sans);font-variant-numeric:tabular-nums;letter-spacing:0;color:var(--cv-texto)}
+.cv-explorador.cv-explorador .corazon.con-n{width:auto;min-width:34px;padding:0 6px 0 6px;gap:4px;border-radius:999px}
+.cv-explorador.cv-explorador .corazon.con-n .corazon__n{display:inline}
+.cv-explorador.cv-explorador .corazon.on .corazon__n{color:var(--cv-rojo)}
+/* «Más guardados», delante de Mis vinos, con el mismo aspecto. Los dos
+   en una línea; si no caben con la vista y el día y la noche, estos bajan
+   a la línea de abajo */
+.cv-explorador.cv-explorador .filtros__mis{gap:8px}
+.cv-explorador.cv-explorador .mis-boton{white-space:nowrap}
+.cv-explorador.cv-explorador .filtros__vista{flex-wrap:wrap;row-gap:10px}
+.cv-explorador.cv-explorador .gente-boton{order:-1}
+.cv-explorador.cv-explorador .gente-boton svg path{stroke-linejoin:miter}
 /* «Mis vinos» es un sitio, no un chip más: un botón fijo al final de la fila
    de los desplegables, junto a Mapa / Lista, siempre a la vista (también
    sin vinos guardados), con el corazón y la cuenta. Abre la vista de mis

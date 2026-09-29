@@ -10,7 +10,8 @@
  *
  *   - Guarda la licencia de esta web (una por web) y la lee.
  *   - Habla con Bodega (bodega.caracool.net): manda la licencia, el
- *     dominio, la versión y la huella de los archivos, y trae lo que toque.
+ *     dominio, la versión y la huella de los archivos, y trae lo que toque
+ *     (o lleva lo que toque: los corazones de la gente).
  *   - Contesta al eco: cuando Bodega quiere saber si este dominio tiene de
  *     verdad la licencia, le manda un número y hay que devolverlo firmado.
  *   - Recibe el aviso de Bodega cuando hay algo nuevo que recoger y lo
@@ -221,6 +222,39 @@ if ( ! function_exists( 'caracool_licencia' ) ) {
 			$error = is_array( $datos ) && ! empty( $datos['codigo'] ) ? $datos['codigo'] : 'http_' . $codigo;
 		}
 		return array( 'codigo' => $codigo, 'datos' => is_array( $datos ) ? $datos : null, 'etag' => $etag, 'error' => $error );
+	}
+
+	/**
+	 * Lo mismo, pero mandando datos (POST con JSON): los corazones, por
+	 * ahora. Devuelve lo mismo que caracool_bodega_pedir().
+	 */
+	function caracool_bodega_enviar( $ruta, $datos, $args = array() ) {
+		$args = wp_parse_args( $args, array( 'version' => '', 'huella' => '', 'timeout' => 15 ) );
+		$r    = wp_remote_post(
+			caracool_bodega_url() . '/wp-json/caracool-bodega/v1/' . ltrim( $ruta, '/' ),
+			array(
+				'timeout' => $args['timeout'],
+				'headers' => array(
+					'Accept'             => 'application/json',
+					'Content-Type'       => 'application/json',
+					'Authorization'      => 'Bearer ' . caracool_licencia(),
+					'X-Caracool-Dominio' => caracool_dominio(),
+					'X-Caracool-Version' => $args['version'],
+					'X-Caracool-Huella'  => $args['huella'],
+				),
+				'body'    => wp_json_encode( $datos ),
+			)
+		);
+		if ( is_wp_error( $r ) ) {
+			return array( 'codigo' => 0, 'datos' => null, 'error' => $r->get_error_message() );
+		}
+		$codigo = (int) wp_remote_retrieve_response_code( $r );
+		$datos  = json_decode( (string) wp_remote_retrieve_body( $r ), true );
+		$error  = '';
+		if ( $codigo >= 400 ) {
+			$error = is_array( $datos ) && ! empty( $datos['codigo'] ) ? $datos['codigo'] : 'http_' . $codigo;
+		}
+		return array( 'codigo' => $codigo, 'datos' => is_array( $datos ) ? $datos : null, 'error' => $error );
 	}
 
 	// ── Lo que Bodega le pregunta a esta web ────────────────────────────

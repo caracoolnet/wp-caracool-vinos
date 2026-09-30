@@ -53,12 +53,22 @@ class Caracool_Vinos_Widget extends \Elementor\Widget_Base {
 		return array( 'vinos', 'vino', 'carta', 'bodega', 'mapa', 'globo', 'red', 'caracool' );
 	}
 
+	/** En el editor, también Tres toques: el widget se vuelve a pintar por AJAX y así «Ayúdame a elegir» funciona sin guardar. */
+	private function en_editor() {
+		if ( ! class_exists( '\Elementor\Plugin' ) || empty( \Elementor\Plugin::$instance ) ) {
+			return false;
+		}
+		$e = \Elementor\Plugin::$instance;
+		return ( ! empty( $e->editor ) && method_exists( $e->editor, 'is_edit_mode' ) && $e->editor->is_edit_mode() )
+			|| ( ! empty( $e->preview ) && method_exists( $e->preview, 'is_preview_mode' ) && $e->preview->is_preview_mode() );
+	}
+
 	public function get_style_depends() {
-		return array( 'cv-explorador' );
+		return $this->en_editor() ? array( 'cv-toques', 'cv-explorador' ) : array( 'cv-explorador' );
 	}
 
 	public function get_script_depends() {
-		return array( 'cv-explorador' );
+		return $this->en_editor() ? array( 'cv-toques', 'cv-explorador' ) : array( 'cv-explorador' );
 	}
 
 	/** Un control de color que escribe un token en el bloque. */
@@ -150,6 +160,57 @@ class Caracool_Vinos_Widget extends \Elementor\Widget_Base {
 					'si' => 'Sí: el visitante cambia de día a noche',
 					'no' => 'No: siempre la escena de arriba',
 				),
+			)
+		);
+
+		$this->end_controls_section();
+
+		// ── Contenido: Ayúdame a elegir ───────────────────────────────
+		$this->start_controls_section( 'elegir_seccion', array( 'label' => 'Ayúdame a elegir' ) );
+
+		$tiene = class_exists( 'Caracool_Vinos_Toques' ) && Caracool_Vinos_Toques::permitido();
+		$this->add_control(
+			'nota_elegir',
+			array(
+				'type'            => Controls_Manager::RAW_HTML,
+				'raw'             => 'Un botón junto a «Mis vinos» que abre «Tres toques» encima del explorador: tres preguntas (el tipo, hasta cuánto y de aquí o de fuera) y salen cuatro vinos, con el resto debajo; cada uno lleva a su ficha en el mapa. Con <b>#elegir</b> al final de la dirección, la página se abre ya con las preguntas (sirve para enlazarlo desde la portada o la carta).<br><br>'
+					. ( $tiene ? 'Esta web tiene «Tres toques».' : '<b>Esta web no tiene «Tres toques»</b>: lo da Caracool desde Bodega. Mientras no lo tenga, el botón no sale.' ),
+				'content_classes' => 'elementor-descriptor',
+			)
+		);
+
+		$this->add_control(
+			'elegir',
+			array(
+				'label'        => 'Botón «Ayúdame a elegir»',
+				'type'         => Controls_Manager::SWITCHER,
+				'label_on'     => 'Sí',
+				'label_off'    => 'No',
+				'return_value' => 'si',
+				'default'      => 'si',
+			)
+		);
+
+		$this->add_control(
+			'elegir_aqui',
+			array(
+				'label'       => 'Lo de aquí',
+				'type'        => Controls_Manager::TEXT,
+				'default'     => '',
+				'placeholder' => 'De aquí',
+				'description' => 'Cómo se llama la opción de las zonas que van delante en Caracool → Vinos → Ajustes (por ejemplo, «De Murcia»).',
+				'condition'   => array( 'elegir' => 'si' ),
+			)
+		);
+
+		$this->add_control(
+			'elegir_tramos',
+			array(
+				'label'       => 'Tramos de precio',
+				'type'        => Controls_Manager::TEXT,
+				'default'     => '40, 70, 150',
+				'description' => 'Dónde se parten los precios, en euros y separados por comas. Con 40, 70 y 150 salen «Hasta 40 €», «40 a 70 €», «70 a 150 €» y «Más de 150 €». Sin precios en la web, esta pregunta no sale.',
+				'condition'   => array( 'elegir' => 'si' ),
 			)
 		);
 
@@ -259,6 +320,10 @@ class Caracool_Vinos_Widget extends \Elementor\Widget_Base {
 				$atts[ $k ] = $s[ $k ];
 			}
 		}
+		// «Ayúdame a elegir»: apagado solo si se apaga aquí (un widget de antes, sin el ajuste, lo lleva)
+		$atts['elegir'] = ( isset( $s['elegir'] ) && 'si' !== $s['elegir'] ) ? 'no' : 'si';
+		$atts['aqui']   = isset( $s['elegir_aqui'] ) ? $s['elegir_aqui'] : '';
+		$atts['tramos'] = isset( $s['elegir_tramos'] ) ? $s['elegir_tramos'] : '';
 		echo Caracool_Vinos_Explorador::html( $atts ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 }

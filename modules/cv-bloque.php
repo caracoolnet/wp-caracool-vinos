@@ -11,7 +11,9 @@
  *   que da Bodega y enciende la web; Lista va siempre), $modo (con la que arranca),
  *   $panel ('mosaico' | 'pildoras' | 'ficha': la piel del panel), $dianoche (bool: el sol y la luna),
  *   $esquinas ('web': las del Kit | 'diseno': las de la piel),
- *   $precios (bool), $datos (JSON ya escapado), $rotulo, $titulo, $entradilla, $n, $np, $pie
+ *   $toques (bool: «Ayúdame a elegir», la capa con Tres toques),
+ *   $precios (bool), $datos (JSON ya escapado), $rotulo, $titulo, $entradilla, $n, $np,
+ *   $pie (el texto del pie, sin fecha; vacío, no hay pie)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -96,9 +98,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 
     <div class="lista" id="cv-lista"><p class="vacio">Cargando la carta…</p></div>
     <div class="ficha oculto" id="cv-ficha"></div>
-    <p class="lista__pie"><?php echo esc_html( $pie ); ?></p>
+    <?php if ( '' !== $pie ) : ?><p class="lista__pie"><?php echo esc_html( $pie ); ?></p><?php endif; ?>
   </section>
 
 </div>
+<?php if ( $toques ) : ?>
+<div class="elegir" id="cv-elegir" role="dialog" aria-modal="true" aria-label="Ayúdame a elegir" data-lenis-prevent hidden>
+  <button type="button" class="elegir__cerrar" id="cv-elegir-cerrar" aria-label="Cerrar y volver a la carta" title="Volver a la carta (Esc)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>Volver a la carta</span></button>
+  <section class="cv-toques" data-cv-capa aria-label="Tres preguntas para elegir vino">
+    <div class="tq-dentro"><div class="tq-hilo" aria-label="Lo que has elegido"></div><div class="tq-escena" aria-live="polite"></div></div>
+  </section>
+</div>
+<?php endif; ?>
 <div class="aviso-flotante" id="cv-aviso" role="status" aria-live="polite"></div>
 </div>

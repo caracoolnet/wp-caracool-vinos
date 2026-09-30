@@ -26,6 +26,10 @@
  *
  * El panel de filtros tiene tres pieles sobre la misma estructura
  * (mosaico, píldoras, ficha), en data-panel.
+ *
+ * Si la web tiene «Tres toques», el explorador lleva además el botón
+ * «Ayúdame a elegir», que abre las tres preguntas en una capa encima (ver
+ * toques()). Con #elegir en la dirección, la página se abre ya con ella.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -67,7 +71,7 @@ class Caracool_Vinos_Explorador {
 	 * script aparte porque el editor de Elementor vuelve a pintar el widget
 	 * por AJAX y un script encolado no se repite; así viajan con el HTML.
 	 */
-	private static function datos( $carta ) {
+	private static function datos( $carta, $toques = null ) {
 		$a   = Caracool_Vinos::ajustes();
 		$cfg = array(
 			'vinos'       => $carta['vinos'],
@@ -78,6 +82,7 @@ class Caracool_Vinos_Explorador {
 			'ubicacion'   => 'si' === $a['ubicacion'],
 			'favoritos'   => 'si' === $a['favoritos'],
 			'corazones'   => class_exists( 'Caracool_Vinos_Corazones' ) ? Caracool_Vinos_Corazones::config() : null,
+			'toques'      => $toques,
 			'nombre'      => $a['nombre'],
 			'mundo'       => CARACOOL_VINOS_URL . 'assets/mundo-110m.json?v=' . CARACOOL_VINOS_VERSION,
 			'finos'       => CARACOOL_VINOS_URL . 'assets/finos-50m.json?v=' . CARACOOL_VINOS_VERSION,
@@ -179,6 +184,29 @@ class Caracool_Vinos_Explorador {
 		return $v;
 	}
 
+	/**
+	 * «Ayúdame a elegir»: Tres toques dentro del explorador, detrás de un
+	 * botón junto a Mis vinos. Sale si la web tiene Tres toques (lo da
+	 * Caracool en Bodega, como el bloque suelto) y el widget o el shortcode
+	 * no lo quitan. Lo de aquí y los tramos de precio, como en el bloque
+	 * suelto. Devuelve lo que viaja al navegador, o null si no sale.
+	 *   [caracool_vinos elegir="no"]
+	 *   [caracool_vinos aqui="De Murcia" tramos="40, 70, 150"]
+	 */
+	public static function toques( $atts = array() ) {
+		$atts = is_array( $atts ) ? $atts : array();
+		if ( ! class_exists( 'Caracool_Vinos_Toques' ) || ! Caracool_Vinos_Toques::permitido() ) {
+			return null;
+		}
+		if ( isset( $atts['elegir'] ) && in_array( strtolower( (string) $atts['elegir'] ), array( 'no', '0', 'false' ), true ) ) {
+			return null;
+		}
+		return array(
+			'aqui'   => isset( $atts['aqui'] ) ? trim( wp_strip_all_tags( (string) $atts['aqui'] ) ) : '',
+			'tramos' => Caracool_Vinos_Toques::tramos( isset( $atts['tramos'] ) ? $atts['tramos'] : '' ),
+		);
+	}
+
 	// ── Salida ──────────────────────────────────────────────────────────
 
 	public function shortcode( $atts ) {
@@ -195,6 +223,13 @@ class Caracool_Vinos_Explorador {
 			return '<div class="cv-explorador cv-explorador--vacio"><p>' . esc_html( $a['vacio'] ) . '</p></div>';
 		}
 
+		// «Ayúdame a elegir»: la hoja y el script de Tres toques, antes que el explorador
+		$toques_cfg = self::toques( $atts );
+		$toques     = (bool) $toques_cfg;
+		if ( $toques ) {
+			wp_enqueue_style( 'cv-toques' );
+			wp_enqueue_script( 'cv-toques' );
+		}
 		wp_enqueue_script( 'cv-explorador' );
 
 		$n      = count( $carta['vinos'] );
@@ -226,11 +261,13 @@ class Caracool_Vinos_Explorador {
 			}
 		}
 		$precios    = 'si' === $a['precios'];
-		$datos      = self::datos( $carta );
+		$datos      = self::datos( $carta, $toques_cfg );
 		$rotulo     = $a['rotulo'];
 		$titulo     = $a['titulo'];
 		$entradilla = $a['entradilla'];
-		$pie        = 'Carta del ' . $carta['fecha_texto'] . ( $precios && '' !== trim( $a['pie'] ) ? ' · ' . $a['pie'] : '' );
+		// el pie de la lista: el texto de Ajustes («IVA incluido» de fábrica), solo con
+		// precios; sin texto, no hay pie. La fecha de la carta no sale en la web.
+		$pie        = $precios ? trim( (string) $a['pie'] ) : '';
 
 		ob_start();
 		include CARACOOL_VINOS_DIR . 'modules/cv-bloque.php';

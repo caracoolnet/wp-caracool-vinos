@@ -64,7 +64,7 @@ class Caracool_Vinos_Ajustes {
 				'favoritos'   => 'si',
 				'region'      => 'Jumilla, Yecla, Bullas, Murcia',
 				'nombre'      => get_bloginfo( 'name' ),
-				'pie'         => 'Precios en euros, IVA incluido',
+				'pie'         => 'IVA incluido',
 				'vacio'       => 'La carta de vinos se está preparando.',
 			)
 		);
@@ -277,7 +277,7 @@ class Caracool_Vinos_Ajustes {
 					<label for="cv-pie">Pie de la lista</label>
 					<div>
 						<input type="text" id="cv-pie" name="cv[pie]" value="<?php echo esc_attr( $a['pie'] ); ?>">
-						<span class="cc-hint">Sale detrás de «Carta del 9 de septiembre de 2026 · ».</span>
+						<span class="cc-hint">La línea de debajo de la lista, solo con los precios a la vista. Vacío, no sale nada. La fecha de la carta no se enseña en la web.</span>
 					</div>
 				</div>
 

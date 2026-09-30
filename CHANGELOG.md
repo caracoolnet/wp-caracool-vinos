@@ -1,5 +1,57 @@
 # Cambios
 
+## 0.7.2 · 30 de septiembre de 2026
+
+- **«Ayúdame a elegir», sin hueco bajo la cabecera.** Con una cabecera fija
+  y transparente por encima (la de El Churra), la página de detrás asomaba
+  entre el menú y la capa. Ahora la franja de debajo de la cabecera es de la
+  capa. La capa y su scroll siguen empezando donde acaba la cabecera, y la
+  X no se mueve. Sin cabecera fija no cambia nada.
+- **De noche, la cabecera de la web se lee.** Caracool Churra pone el menú y
+  el logotipo en tinta o en crema según el fondo que ve debajo, y no sabe
+  leer el degradado de la escena. De noche el explorador pone la clase
+  `ch-oscuro` en su raíz (la que esa cabecera documenta) y le avisa al
+  cambiar de escena y al abrir o cerrar la capa, también cuando acaba la
+  transición, porque durante ella el navegador no da ningún elemento bajo
+  el menú.
+- **De noche, los títulos de zona se leen.** «Jumilla» y compañía cogían el
+  color de los h3 de la web, oscuro, en vez del del panel.
+- Pruebas: `prueba-072.js`, en el laboratorio, pone una cabecera como la de El
+  Churra, con el script y la hoja reales de Caracool Churra, y comprueba la
+  franja, la cabecera de día y de noche (escritorio, móvil y lista) y una
+  web sin cabecera fija.
+
+## 0.7.1 · 30 de septiembre de 2026
+
+- **El pie de la lista, sin fecha.** Ya no dice «Carta del 9 de
+  septiembre de 2026»: la fecha sigue en el panel (pestaña Carta) y en
+  Bodega, pero no se enseña en la web.
+- El texto del pie es el de Ajustes, «IVA incluido» de fábrica, y cada
+  web pone el suyo. Quien tenía el de antes («Precios en euros, IVA
+  incluido») pasa solo al nuevo; quien lo había cambiado se queda con lo
+  suyo. Sin texto, o sin precios a la vista, no hay pie.
+- Lleva también todo lo de la 0.7.0, que no llegó a publicarse.
+
+## 0.7.0 · 29 de septiembre de 2026
+
+- **Ayúdame a elegir.** El explorador lleva un botón nuevo junto a «Mis
+  vinos» que abre Tres toques en una capa encima, con los vinos que ya
+  tiene. Se cierra con «Volver a la carta», con Esc o con «atrás», y al
+  volver a abrirla sigue donde se dejó. Cada vino del resultado lleva a su
+  ficha en el explorador («Verlo en el mapa»).
+- Con `#elegir` en la dirección, la página se abre ya con las preguntas.
+- Sale si la web tiene Tres toques en Bodega. El widget del explorador
+  tiene una sección nueva, «Ayúdame a elegir», para quitarlo y para «Lo de
+  aquí» y los tramos de precio; en el shortcode, `elegir="no"`, `aqui` y
+  `tramos`.
+- Dentro de la capa, Tres toques toma los colores y las letras del
+  explorador (también los que cambie su widget) y tiene paleta de noche.
+- `assets/cv-toques.js` deja `window.CaracoolToques` (`montar()` y
+  `filas()`) para el explorador; el bloque suelto de Tres toques sigue
+  igual.
+- Pruebas: `pruebas/elegir.js` recorre la capa en el navegador (escritorio,
+  móvil, noche, Columnas con Lista, `#elegir`, Esc, atrás y el tabulador).
+
 ## 0.6.0 · 29 de septiembre de 2026
 
 - **Tres toques.** Un bloque nuevo, aparte del explorador: tres preguntas

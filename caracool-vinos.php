@@ -3,7 +3,7 @@
  * Plugin Name:  Caracool Vinos
  * Plugin URI:   https://github.com/caracoolnet/wp-caracool-vinos
  * Description:  La carta de vinos de un restaurante, publicada como una página que se filtra por tipo, uva, bodega, zona y precio, con un globo que gira hasta la zona de cada vino y una red de países, zonas, bodegas y uvas. La carta la lee y la publica Caracool en Bodega; esta web la recibe con su licencia.
- * Version:           0.6.0
+ * Version:           0.7.2
  * Author:       Caracool
  * Author URI:   https://caracool.net
  * License:      GPL-2.0-or-later
@@ -45,7 +45,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CARACOOL_VINOS_VERSION', '0.6.0' );
+define( 'CARACOOL_VINOS_VERSION', '0.7.2' );
 define( 'CARACOOL_VINOS_FILE', __FILE__ );
 define( 'CARACOOL_VINOS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CARACOOL_VINOS_URL', plugin_dir_url( __FILE__ ) );
@@ -76,11 +76,19 @@ final class Caracool_Vinos {
 		add_filter( 'plugins_api', array( $this, 'update_details' ), 10, 3 );
 	}
 
+	/** El pie de la lista que venía de fábrica hasta la 0.7.0; desde la 0.7.1 es «IVA incluido». */
+	const PIE_DE_ANTES = 'Precios en euros, IVA incluido';
+
 	public static function ajustes() {
-		return wp_parse_args(
+		$a = wp_parse_args(
 			get_option( self::OPCION, array() ),
 			apply_filters( 'caracool_vinos_defaults', array() )
 		);
+		// quien tenía el pie de fábrica de antes, pasa al nuevo (quien lo cambió, se queda con lo suyo)
+		if ( isset( $a['pie'] ) && self::PIE_DE_ANTES === $a['pie'] ) {
+			$a['pie'] = 'IVA incluido';
+		}
+		return $a;
 	}
 
 	public function enlace_ajustes( $enlaces ) {

@@ -38,7 +38,9 @@ En **Ajustes** se enciende o se apaga cada vista que da Bodega, se elige la
 escena (de día o de noche) y si el visitante tiene el sol y la luna para
 cambiarla, y qué se ve: los precios, la ubicación en bodega, «Mis
 vinos», qué zonas van delante en la lista y los textos del pie y de «sin
-carta».
+carta». El pie es una línea debajo de la lista, solo con precios: «IVA
+incluido» de fábrica, y sin texto no sale. La fecha de la carta no se
+enseña en la web (desde la 0.7.1).
 
 ## Los colores: el Kit, el widget y la hoja
 
@@ -124,6 +126,13 @@ su navegador. Si en Ajustes se apaga «Sol y luna» (o con `dianoche="no"`),
 no hay botones y manda siempre la escena de la casa. En el editor de
 Elementor no se tiene en cuenta lo recordado, para ver lo que dice el
 widget.
+
+Con la cabecera de Caracool Churra (la de El Churra), el menú y el logotipo
+cambian de color según el fondo que tienen debajo, y no saben leer el
+degradado de la escena. Por eso, de noche, el explorador pone la clase
+`ch-oscuro` en su raíz y le avisa a la cabecera de que vuelva a mirar al
+cambiar de escena y al abrir o cerrar «Ayúdame a elegir». Es la clase que
+esa cabecera documenta para estos casos; sin ella, no pasa nada.
 
 ## La red
 
@@ -279,6 +288,42 @@ corazones de la gente. Con el explorador en la misma página se avisan con
 el evento `caracool-vinos-mis`, comparten una sola lectura de la cuenta
 (`window.__cvGente`) y solo uno cuenta los guardados de antes
 (`window.__cvContando`).
+
+### Dentro del explorador: «Ayúdame a elegir»
+
+Desde la 0.7.0, el explorador lleva un botón «Ayúdame a elegir» junto a
+«Mis vinos». Abre Tres toques en una capa encima del explorador, por
+debajo de la cabecera de la web, con los vinos que el explorador ya tiene
+(no se descargan otra vez). La página de detrás no se mueve y el globo se
+para mientras la capa está abierta.
+
+- Se cierra con «Volver a la carta» (en el móvil, la X), con Esc o con el
+  botón «atrás» del navegador. Al volver a abrirla sigue donde se dejó.
+- Cada vino del resultado lleva a su ficha en el explorador: «Verlo en el
+  mapa» en los cuatro de arriba (en la red, «Verlo en la red»; en la
+  lista, «Ver su ficha») y el nombre en los de debajo.
+- Con `#elegir` al final de la dirección, la página se abre ya con la
+  capa: `/vinos/#elegir` sirve para un botón en la portada o en la carta.
+- Toma los colores y las letras del explorador, con lo que cambie su
+  widget, y de noche su propia paleta.
+- Con una cabecera fija y transparente por encima (z-index mayor de 40), la
+  franja de debajo de ella también es de la capa, para que la página de
+  detrás no asome entre el menú y la capa. El explorador mide la cabecera y
+  lo marca con `data-cab="fija"` en su raíz (desde la 0.7.2).
+
+Sale si la web tiene Tres toques en Bodega. El widget del explorador lo
+puede quitar y tiene sus propios «Lo de aquí» y tramos de precio, igual
+que el bloque suelto; en el shortcode:
+
+```
+[caracool_vinos elegir="no"]
+[caracool_vinos aqui="De Murcia" tramos="40, 70, 150"]
+```
+
+Por dentro: `assets/cv-toques.js` deja `window.CaracoolToques` con
+`montar()` y `filas()`, y el explorador lo monta la primera vez que se
+abre la capa. La hoja de Tres toques no declara sus tokens dentro de la
+capa (`data-cv-capa`): los hereda del explorador.
 
 ## Los corazones de la gente
 

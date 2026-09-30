@@ -10,6 +10,9 @@
  *   region      zonas que van delante en la lista, en mayúsculas
  *   precios, ubicacion, favoritos   qué se ve (true/false)
  *   nombre      cómo se llama la casa al compartir
+ *   corazones   dónde se cuentan los corazones de la gente (o null)
+ *   toques      «Ayúdame a elegir»: {aqui, tramos}, o null si no sale;
+ *               lo pinta assets/cv-toques.js (window.CaracoolToques)
  *   mundo, finos   URLs de la geometría del mundo (110m y 50m)
  * Van dentro del bloque y no en un script aparte para que el editor de
  * Elementor, que vuelve a pintar el widget por AJAX, los tenga siempre.
@@ -140,14 +143,23 @@
   }
   function medirCabecera() {
     if (!cabeceraEl) { cabeceraEl = buscarCabecera(); }
-    var alto = 0;
+    var alto = 0, fija = false;
     if (cabeceraEl) {
-      var c = cabeceraEl.getBoundingClientRect();
-      alto = getComputedStyle(cabeceraEl).position === 'fixed' ? Math.max(0, Math.round(c.bottom)) : Math.round(c.height);
+      var c = cabeceraEl.getBoundingClientRect(), cs = getComputedStyle(cabeceraEl);
+      alto = cs.position === 'fixed' ? Math.max(0, Math.round(c.bottom)) : Math.round(c.height);
+      // por encima de la capa de «Ayúdame a elegir» (z-index 40)
+      fija = cs.position === 'fixed' && (parseInt(cs.zIndex, 10) || 0) > 40;
     }
     raiz.style.setProperty('--cv-cabecera', alto + 'px');
+    if (fija) { raiz.setAttribute('data-cab', 'fija'); } else { raiz.removeAttribute('data-cab'); }
   }
   medirCabecera();
+  /* La cabecera de Caracool Churra se pone en tinta o en crema según el fondo
+     que ve debajo, y solo vuelve a mirar al hacer scroll o cambiar de
+     tamaño. De noche, o con la capa abierta, el fondo cambia sin scroll: se
+     le avisa con un scroll, y el degradado de la escena, que ella no sabe
+     leer, se lo dice la clase ch-oscuro (la que esa cabecera documenta). */
+  function avisarCabecera() { try { window.dispatchEvent(new Event('scroll')); } catch (e) {} }
   if (window.ResizeObserver && cabeceraEl) { new ResizeObserver(function () { medirCabecera(); }).observe(cabeceraEl); }
   /* cuando los filtros están clavados (solo si son sticky: modo lista o
      «columnas»), la clase .clavado les pone el tapón de arriba */
@@ -711,10 +723,18 @@
     if (recordar) { try { localStorage.setItem(CLAVE_ESCENA, e); } catch (x) {} }
     var cambio = function () {
       raiz.dataset.escena = e;
+      raiz.classList.toggle('ch-oscuro', e === 'noche');
+      avisarCabecera();
       if (dianocheEl) { Array.prototype.forEach.call(dianocheEl.querySelectorAll('button'), function (b) { var on = b.dataset.e === e; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }); }
       if (red) { red.repintar(); }
     };
-    if (recordar && raiz.dataset.escena !== e && !reducido && document.startViewTransition) { document.startViewTransition(cambio); } else { cambio(); }
+    if (recordar && raiz.dataset.escena !== e && !reducido && document.startViewTransition) {
+      // mientras dura la transición, el navegador da la raíz de la página como
+      // lo que hay bajo cualquier punto, y la cabecera de la web leería mal
+      // su fondo: se le avisa también cuando acaba
+      var vt = document.startViewTransition(cambio);
+      if (vt && vt.finished) { vt.finished.then(avisarCabecera, avisarCabecera); }
+    } else { cambio(); }
   }
   if (dianocheEl) {
     dianocheEl.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) { setEscena(b.dataset.e, true); } });
@@ -1752,6 +1772,131 @@
   red = hayRed ? redModulo() : null; // sin botón de Red, la red ni se monta
   if (red && modo() === 'red') { red.mostrar(); }
   if (red) { red.actualizar(); }
+
+  /* ── Ayúdame a elegir ──────────────────────────────────────────────
+     «Tres toques» dentro del explorador. Un botón junto a Mis vinos lo abre
+     en una capa encima, debajo de la cabecera de la web, con los vinos que
+     ya tiene el explorador (no se descargan otra vez). Se cierra con la X,
+     con Esc o con «atrás» del navegador, y deja las respuestas puestas
+     para la próxima vez. Con #elegir en la dirección, la página se abre ya
+     con la capa: sirve para enlazarla desde la portada o la carta. Cada
+     vino del resultado lleva a su ficha aquí («Verlo en el mapa»).
+     Sale si la casa tiene Tres toques (lo da Caracool en Bodega) y el
+     widget no lo ha quitado. */
+  var TOQUES = (CFG.toques && window.CaracoolToques) ? CFG.toques : null;
+  var capaEl = document.getElementById('cv-elegir');
+  var BRUJULA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 1 1 0 17a8.5 8.5 0 1 1 0-17Z"/><path d="m15.2 8.8-2 4.4-4.4 2 2-4.4Z"/></svg>';
+  var capa = { lista: null, abierta: false, empuje: false, antes: null, deriva: false, html: '', ver: null, lenis: null };
+  var elegirEl = null;
+  function textoVer() { return modo() === 'lista' ? 'Ver su ficha' : (modo() === 'red' ? 'Verlo en la red' : 'Verlo en el mapa'); }
+  function montarCapa() {
+    if (capa.lista) { capa.lista.repintar(); return; }
+    var conCFG = typeof CFG !== 'undefined';
+    var zonas = Object.keys(REGION).sort(function (a, b) { return REGION[a] - REGION[b]; });
+    capa.lista = window.CaracoolToques.montar(capaEl.querySelector('.cv-toques'), {
+      vinos: window.CaracoolToques.filas(VINOS),
+      region: zonas,
+      aqui: TOQUES.aqui || '',
+      tramos: TOQUES.tramos || [],
+      precios: conCFG ? !!CFG.precios : true,
+      favoritos: conCFG ? !!CFG.favoritos : true,
+      corazones: CZ ? { url: CZ.url, minimo: CZ.minimo, lista: CZ.lista } : null
+    }, {
+      ver: function (llave) { var v = porLlave[llave]; if (v) { cerrarCapa(v); } },
+      verTexto: textoVer,
+      subir: function () { if (capaEl.scrollTop > 0) { capaEl.scrollTo({ top: 0, behavior: reducido ? 'auto' : 'smooth' }); } }
+    }) || null;
+  }
+  function abrirCapa(desdeDireccion) {
+    if (!elegirEl || capa.abierta) { return; }
+    medirCabecera();
+    montarCapa();
+    if (!capa.lista) { return; }
+    capa.abierta = true;
+    capa.antes = document.activeElement;
+    capaEl.hidden = false; capaEl.scrollTop = 0;
+    if (!reducido) { capaEl.classList.remove('entra'); void capaEl.offsetWidth; capaEl.classList.add('entra'); }
+    raiz.classList.add('eligiendo');
+    elegirEl.setAttribute('aria-expanded', 'true');
+    avisarCabecera();
+    // la página de detrás, quieta (también el scroll suave de la web, Lenis,
+    // si lo lleva: la capa tiene data-lenis-prevent y Lenis se para); el
+    // globo y la red, parados
+    capa.html = document.documentElement.style.overflow; document.documentElement.style.overflow = 'hidden';
+    var L = window.__caracoolLenis;
+    capa.lenis = (L && typeof L.stop === 'function' && !L.isStopped) ? L : null;
+    if (capa.lenis) { capa.lenis.stop(); }
+    capa.deriva = deriva; deriva = false;
+    if (red && modo() === 'red') { red.parar(); }
+    capa.empuje = false;
+    if (!desdeDireccion) { try { history.pushState({ cvElegir: 1 }, '', location.pathname + location.search + '#elegir'); capa.empuje = true; } catch (e) {} }
+    var h = capaEl.querySelector('.tq-escena h2');
+    if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+  }
+  function ocultarCapa() {
+    if (!capa.abierta) { return; }
+    capa.abierta = false;
+    capaEl.hidden = true; capaEl.classList.remove('entra');
+    raiz.classList.remove('eligiendo');
+    elegirEl.setAttribute('aria-expanded', 'false');
+    avisarCabecera();
+    document.documentElement.style.overflow = capa.html;
+    if (capa.lenis) { capa.lenis.start(); capa.lenis = null; }
+    deriva = capa.deriva;
+    if (red && modo() === 'red') { red.mostrar(); }
+    var v = capa.ver; capa.ver = null;
+    if (v) {
+      // «Verlo en el mapa»: su ficha, aquí
+      elegir(v);
+      var panel = document.getElementById('cv-panel');
+      if (window.innerWidth > 900 && panel.getBoundingClientRect().top < 0) { panel.scrollIntoView({ behavior: reducido ? 'auto' : 'smooth', block: 'start' }); }
+      var vuelta = document.getElementById('cv-volver'); if (vuelta) { vuelta.focus({ preventScroll: true }); }
+    } else if (capa.antes && capa.antes.focus && document.contains(capa.antes)) {
+      capa.antes.focus({ preventScroll: true });
+    }
+  }
+  // cerrar: si la abrió el botón, «atrás» (así el botón atrás del móvil
+  // también la cierra); si llegó con #elegir en la dirección, se quita
+  function cerrarCapa(v) {
+    if (!capa.abierta) { return; }
+    capa.ver = v || null;
+    if (capa.empuje && location.hash === '#elegir') {
+      history.back();
+      setTimeout(function () { if (capa.abierta) { ocultarCapa(); } }, 600);
+    } else {
+      ocultarCapa();
+      if (location.hash === '#elegir') { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
+    }
+  }
+  function mirarDireccion() {
+    var quiere = location.hash === '#elegir';
+    if (quiere && !capa.abierta) { abrirCapa(true); } else if (!quiere && capa.abierta) { ocultarCapa(); }
+  }
+  if (TOQUES && capaEl) {
+    elegirEl = document.createElement('button'); elegirEl.type = 'button'; elegirEl.className = 'mis-boton elegir-boton';
+    elegirEl.innerHTML = BRUJULA + '<span>Ayúdame a elegir</span>';
+    elegirEl.title = 'Tres preguntas y te propongo unos vinos';
+    elegirEl.setAttribute('aria-haspopup', 'dialog'); elegirEl.setAttribute('aria-expanded', 'false');
+    elegirEl.addEventListener('click', function () { abrirCapa(false); });
+    document.getElementById('cv-mis-sitio').appendChild(elegirEl);
+    document.getElementById('cv-elegir-cerrar').addEventListener('click', function () { cerrarCapa(); });
+    window.addEventListener('popstate', mirarDireccion);
+    window.addEventListener('hashchange', mirarDireccion);
+    // Esc cierra la capa (antes que la ficha), y el tabulador no sale de ella
+    window.addEventListener('keydown', function (e) {
+      if (!capa.abierta) { return; }
+      if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); cerrarCapa(); return; }
+      if (e.key !== 'Tab') { return; }
+      var f = Array.prototype.filter.call(capaEl.querySelectorAll('button:not([disabled]),a[href],[tabindex="0"]'), function (x) { return x.offsetParent !== null; });
+      if (!f.length) { return; }
+      var dentro = capaEl.contains(document.activeElement);
+      if (e.shiftKey && (!dentro || document.activeElement === f[0])) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && (!dentro || document.activeElement === f[f.length - 1])) { e.preventDefault(); f[0].focus(); }
+    }, true);
+    if (location.hash === '#elegir') { abrirCapa(true); }
+  } else if (capaEl) {
+    capaEl.parentNode.removeChild(capaEl);
+  }
 
   traerGente();
   contarLosDeAntes();

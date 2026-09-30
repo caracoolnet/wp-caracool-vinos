@@ -439,7 +439,7 @@
 /* ── La lista ──────────────────────────────────────────────────────────── */
 .cv-explorador.cv-explorador .lista{padding-top:8px}
 .cv-explorador.cv-explorador .grupo{padding:28px 0 4px;display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--cv-borde);margin-bottom:6px}
-.cv-explorador.cv-explorador .grupo h3{font:italic 500 24px/1.1 var(--cv-didona);margin:0;letter-spacing:-.01em}
+.cv-explorador.cv-explorador .grupo h3{font:italic 500 24px/1.1 var(--cv-didona);margin:0;letter-spacing:-.01em;color:var(--cv-tinta)}
 .cv-explorador.cv-explorador .grupo small{font:600 11.5px/1.2 var(--cv-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--cv-texto)}
 .cv-explorador.cv-explorador .grupo em{font-style:normal;margin-left:auto;font:400 13px/1 var(--cv-sans);color:var(--cv-texto)}
 .cv-explorador.cv-explorador .vino{display:grid;grid-template-columns:1fr auto;gap:4px 24px;align-items:baseline;padding:11px 0 11px 22px;border:0;background:none;width:100%;text-align:left;position:relative;border-bottom:1px solid transparent}
@@ -499,6 +499,40 @@
 .cv-explorador.cv-explorador .filtros__vista{flex-wrap:wrap;row-gap:10px}
 .cv-explorador.cv-explorador .gente-boton{order:-1}
 .cv-explorador.cv-explorador .gente-boton svg path{stroke-linejoin:miter}
+/* «Ayúdame a elegir»: abre «Tres toques» en una capa encima del explorador.
+   Va detrás de Mis vinos, lleno con el acento: no filtra la lista, pregunta.
+   (Con la raíz delante para ganar a las pieles del panel.) */
+.cv-explorador.cv-explorador[data-cv-root] .mis-boton.elegir-boton{background:var(--cv-rojo);border:1px solid var(--cv-rojo);color:var(--cv-crema)}
+.cv-explorador.cv-explorador[data-cv-root] .mis-boton.elegir-boton:hover{background:var(--cv-tinta);border-color:var(--cv-tinta);color:var(--cv-crema)}
+.cv-explorador.cv-explorador[data-cv-root] .mis-boton.elegir-boton svg path{fill:none;stroke:currentColor}
+.cv-explorador.cv-explorador[data-cv-root] .mis-boton.elegir-boton:focus-visible{outline:2px solid var(--cv-tinta);outline-offset:2px}
+/* en la piel «ficha» los botones son pestañas sin relleno: este no */
+.cv-explorador.cv-explorador[data-cv-root][data-panel=ficha] .mis-boton.elegir-boton{padding:7px 14px 8px 12px;border-radius:var(--cv-radio-boton,999px);box-shadow:none}
+/* La capa: fija, debajo de la cabecera de la web (--cabecera), con su
+   propio scroll; la página de detrás no se mueve mientras está abierta. */
+.cv-explorador.cv-explorador .elegir{position:fixed;left:0;right:0;bottom:0;top:var(--cv-cabecera,0px);z-index:40;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;background:var(--cv-crema);scrollbar-width:thin;scrollbar-color:var(--cv-borde) transparent}
+/* (backwards y no both: una animación de transform que se queda puesta
+   convierte la capa en el marco de lo fijo, y la X se iría con ella) */
+.cv-explorador.cv-explorador .elegir.entra{animation:cv-elegir-entra .45s var(--cv-curva) backwards}
+@keyframes cv-elegir-entra{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+/* Si la cabecera de la web es fija, transparente y está por encima (la de El
+   Churra: z-index 99), la franja que hay debajo de ella también es de la
+   capa; sin esto, la página de detrás asoma entre el menú y la capa. Es un
+   fondo fijo y detrás del contenido: la capa y su scroll siguen empezando
+   donde acaba la cabecera. */
+.cv-explorador.cv-explorador[data-cab=fija] .elegir::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--cv-cabecera,0px);background:var(--cv-crema);z-index:-1;pointer-events:none}
+.cv-explorador.cv-explorador .elegir > .cv-toques{min-height:100%;padding-top:76px}
+.cv-explorador.cv-explorador .elegir__cerrar{position:fixed;top:calc(var(--cv-cabecera,0px) + 16px);right:16px;z-index:3;display:inline-flex;align-items:center;gap:8px;height:40px;margin:0;padding:0 16px 0 12px;border:1px solid var(--cv-tinta);border-radius:var(--cv-radio-boton,999px);background:var(--cv-crema);color:var(--cv-tinta);font:500 13px/1 var(--cv-sans);letter-spacing:.15px;text-transform:none;box-shadow:none;min-height:0;cursor:pointer;transition:background .25s ease,color .25s ease}
+.cv-explorador.cv-explorador .elegir__cerrar:hover{background:var(--cv-tinta);color:var(--cv-crema)}
+.cv-explorador.cv-explorador .elegir__cerrar:focus-visible{outline:2px solid var(--cv-tinta);outline-offset:2px}
+.cv-explorador.cv-explorador .elegir__cerrar svg{width:16px;height:16px;flex:none}
+.cv-explorador.cv-explorador .elegir__cerrar svg path{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+@media (max-width:600px){
+  .cv-explorador.cv-explorador .elegir__cerrar{width:40px;padding:0;justify-content:center}
+  .cv-explorador.cv-explorador .elegir__cerrar span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .cv-explorador.cv-explorador .elegir > .cv-toques{padding-top:68px}
+}
+@media (prefers-reduced-motion:reduce){.cv-explorador.cv-explorador .elegir.entra{animation:none}}
 /* «Mis vinos» es un sitio, no un chip más: un botón fijo al final de la fila
    de los desplegables, junto a Mapa / Lista, siempre a la vista (también
    sin vinos guardados), con el corazón y la cuenta. Abre la vista de mis

@@ -11,8 +11,12 @@
  * puede cambiar en su pestaña Estilo. Los colores de cada tipo salen del
  * color del vino en la copa (--cv-vino-*) mezclado con los de la casa. Las
  * esquinas, si la web las da, son las de los botones y campos del Kit.
+ *
+ * Dentro del explorador (la capa de «Ayúdame a elegir», data-cv-capa) no
+ * se declaran los tokens: los hereda del explorador, con lo que haya
+ * cambiado su widget y con el día y la noche.
  */
-.cv-toques{
+.cv-toques:not([data-cv-capa]){
   --cv-tinta:var(--e-global-color-secondary,#241610);
   --cv-crema:var(--e-global-color-cremaclara,#FAF5EC);
   --cv-crema2:var(--e-global-color-crema,#F2E9DC);
@@ -26,6 +30,8 @@
   --cv-didona:var(--e-global-typography-primary-font-family,"Bodoni Moda"),Georgia,serif;
   --cv-sans:var(--e-global-typography-text-font-family,Inter),system-ui,sans-serif;
   --cv-vino-tinto:#E0435A;--cv-vino-blanco:#F2DC8A;--cv-vino-rosado:#F2A0A6;--cv-vino-espumoso:#FBECB4;
+}
+.cv-toques{
   /* derivados: el papel claro de las fichas y el color de cada tipo */
   --tq-papel:color-mix(in srgb,var(--cv-crema) 45%,#fff);
   --tq-caja:var(--cv-radio-campo,18px);
@@ -170,6 +176,35 @@
 .cv-toques.cv-toques .tq-resto .tq-precio{font-size:21px;white-space:nowrap}
 .cv-toques.cv-toques .tq-acciones{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
 .cv-toques.cv-toques .tq-nada{padding:24px;border:1px dashed var(--cv-borde);border-radius:var(--tq-caja);color:var(--cv-texto)}
+
+/* Dentro del explorador: cada vino lleva a su ficha. En las cuatro de
+   arriba, un enlace bajo el precio; en el resto, el nombre entero. */
+.cv-toques.cv-toques .tq-ver{align-self:flex-start;margin-top:14px;display:inline-flex;align-items:center;gap:6px;font:500 13.5px/1.2 var(--cv-sans);color:var(--cv-tinta);border-bottom:1px solid currentColor;padding:2px 0;transition:color .25s ease}
+.cv-toques.cv-toques .tq-ver::after{content:"\2192";transition:transform .3s var(--cv-curva)}
+.cv-toques.cv-toques .tq-ver:hover{color:var(--cv-rojo)}
+.cv-toques.cv-toques .tq-ver:hover::after{transform:translateX(3px)}
+.cv-toques.cv-toques .tq-fila-ver{display:block;width:100%;min-width:0;text-align:left;padding:2px 0}
+.cv-toques.cv-toques .tq-fila-ver b{transition:color .25s ease}
+.cv-toques.cv-toques .tq-fila-ver:hover b{color:var(--cv-rojo)}
+.cv-toques.cv-toques .tq-ver:focus-visible,.cv-toques.cv-toques .tq-fila-ver:focus-visible{outline:2px solid var(--cv-tinta);outline-offset:3px}
+/* De noche (el explorador en modo noche): el papel de las fichas casi no
+   se aclara, y las baldosas son el color del vino sobre la cueva, con la
+   letra clara y la botella del color del vino. */
+[data-escena=noche] .cv-toques[data-cv-capa]{
+  --tq-papel:color-mix(in srgb,var(--cv-crema) 90%,#fff);
+  --tq-tinto:color-mix(in srgb,var(--cv-vino-tinto) 40%,var(--cv-crema));
+  --tq-blanco:color-mix(in srgb,var(--cv-vino-blanco) 28%,var(--cv-crema));
+  --tq-rosado:color-mix(in srgb,var(--cv-vino-rosado) 32%,var(--cv-crema));
+  --tq-burbujas:color-mix(in srgb,var(--cv-vino-espumoso) 24%,var(--cv-crema));
+  --tq-generoso:color-mix(in srgb,var(--cv-naranja) 28%,var(--cv-crema));
+}
+[data-escena=noche] .cv-toques.cv-toques[data-cv-capa] .tq-op--tinto{color:var(--cv-tinta);--tq-b:var(--cv-vino-tinto);--tq-e:var(--tq-tinto)}
+[data-escena=noche] .cv-toques.cv-toques[data-cv-capa] .tq-op--tinto small{color:var(--cv-texto)}
+[data-escena=noche] .cv-toques.cv-toques[data-cv-capa] .tq-op--blanco{--tq-b:var(--cv-vino-blanco)}
+[data-escena=noche] .cv-toques.cv-toques[data-cv-capa] .tq-op--rosado{--tq-b:var(--cv-vino-rosado)}
+[data-escena=noche] .cv-toques.cv-toques[data-cv-capa] .tq-op--burbujas{--tq-b:var(--cv-vino-espumoso)}
+[data-escena=noche] .cv-toques.cv-toques[data-cv-capa] .tq-op--generoso{--tq-b:var(--cv-naranja)}
+[data-escena=noche] .cv-toques.cv-toques[data-cv-capa] .tq-op--otros{--tq-b:var(--cv-texto)}
 
 @media (max-width:900px){
   .cv-toques.cv-toques .tq-opciones{--tq-cols:2!important}

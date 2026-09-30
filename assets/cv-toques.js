@@ -23,6 +23,13 @@
  *
  * Los datos van dentro del bloque, en <script type="application/json"
  * data-cv-toques-datos>, para que el editor de Elementor los tenga siempre.
+ *
+ * El explorador también lo lleva dentro, detrás del botón «Ayúdame a
+ * elegir»: lo monta él con window.CaracoolToques.montar(), con los vinos
+ * que ya tiene (CaracoolToques.filas() los pasa a filas cortas) y tres
+ * extras: ver (cada vino lleva «Verlo en el mapa», que vuelve al
+ * explorador con su ficha), verTexto (cómo se llama ese enlace) y subir
+ * (cómo se vuelve arriba al cambiar de pregunta, dentro de su capa).
  */
 (function () {
   'use strict';
@@ -42,8 +49,25 @@
     var cfg = datosDe(raiz);
     if (!cfg || !cfg.vinos) { return; }
     raiz.dataset.cvListo = '1';
-    montar(raiz, cfg);
+    montar(raiz, cfg, {});
   }
+  /* Para el explorador: los vinos que ya tiene, en las filas cortas de aquí
+     [llave, nombre, bodega, añadas, precio, uvas, zona, país, iso, tipo, formato, parker] */
+  function filas(vinos) {
+    return (vinos || []).map(function (v) {
+      var uvas = v.uvas_texto || (v.uvas && v.uvas.join ? v.uvas.join(', ') : '');
+      return [v.llave || '', v.nombre || '', v.bodega || '', v.anadas && v.anadas.join ? v.anadas.join(' / ') : '', +v.precio || 0,
+        uvas || '', v.zona || '', v.pais || '', v.iso || '', v.tipo || '', v.formato || '', v.parker ? String(v.parker_txt || v.parker) : ''];
+    });
+  }
+  window.CaracoolToques = {
+    filas: filas,
+    montar: function (raiz, cfg, opc) {
+      if (!raiz || raiz.dataset.cvListo || !cfg || !cfg.vinos) { return false; }
+      raiz.dataset.cvListo = '1';
+      return montar(raiz, cfg, opc || {});
+    }
+  };
   function arrancar() { Array.prototype.forEach.call(document.querySelectorAll('.cv-toques[data-cv-toques]'), iniciar); }
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', arrancar); } else { arrancar(); }
   function engancharElementor() {
@@ -78,7 +102,7 @@
   }
   function lista3(nombres) { return nombres.slice(0, 3).join(', ') + (nombres.length > 3 ? '…' : ''); }
 
-  function montar(raiz, CFG) {
+  function montar(raiz, CFG, OPC) {
     var escena = raiz.querySelector('.tq-escena');
     var hiloEl = raiz.querySelector('.tq-hilo');
 
@@ -267,7 +291,7 @@
         if (primera || sinFoco) { return; }
         var h = escena.querySelector('h2');
         if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
-        if (raiz.getBoundingClientRect().top < 0) { raiz.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' }); }
+        if (OPC.subir) { OPC.subir(); } else if (raiz.getBoundingClientRect().top < 0) { raiz.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' }); }
       };
       if (viejo && !quieto && !sinFoco) { viejo.classList.add('sale'); setTimeout(pintar, 170); } else { pintar(); }
     }
@@ -379,6 +403,13 @@
       return d;
     }
     function formato(v) { var f = (v.formato || '').toLowerCase(); return !f || f === 'botella' ? '' : (f === 'magnum' ? 'Mágnum' : v.formato); }
+    // dentro del explorador: volver a él con la ficha de ese vino
+    function textoVer() { return typeof OPC.verTexto === 'function' ? OPC.verTexto() : (OPC.verTexto || 'Verlo en el mapa'); }
+    function botonVer(v) {
+      var b = el('button', { type: 'button', class: 'tq-ver', text: textoVer() });
+      b.addEventListener('click', function () { OPC.ver(v.llave); });
+      return b;
+    }
     function ficha(v, i) {
       var t = el('article', { class: 'tq-ficha tq-ficha--' + v.grupo });
       t.style.animationDelay = (i * 70) + 'ms';
@@ -391,11 +422,16 @@
       if (meta) { t.appendChild(el('p', { class: 'tq-meta', text: meta })); }
       var pie = el('div', { class: 'tq-pie' }, [CFG.precios && v.precio ? el('span', { class: 'tq-precio', text: euros(v.precio) }) : null, CFG.favoritos ? corazon(v) : null]);
       if (pie.childNodes.length) { t.appendChild(pie); }
+      if (OPC.ver) { t.appendChild(botonVer(v)); }
       return t;
     }
     function fila(v) {
+      var quien = [el('b', { text: v.nombre }), el('small', { text: [v.bodega, [legible(v.zona), v.pais].filter(Boolean).join(' · '), v.anada, formato(v)].filter(Boolean).join(' · ') })];
+      // dentro del explorador, el nombre entero lleva a su ficha
+      var nombre = OPC.ver ? el('button', { type: 'button', class: 'tq-fila-ver', title: textoVer() }, quien) : el('span', {}, quien);
+      if (OPC.ver) { nombre.addEventListener('click', function () { OPC.ver(v.llave); }); }
       return el('li', {}, [
-        el('span', {}, [el('b', { text: v.nombre }), el('small', { text: [v.bodega, [legible(v.zona), v.pais].filter(Boolean).join(' · '), v.anada, formato(v)].filter(Boolean).join(' · ') })]),
+        nombre,
         CFG.precios && v.precio ? el('span', { class: 'tq-precio', text: euros(v.precio) }) : el('span'),
         CFG.favoritos ? corazon(v) : el('span')
       ]);
@@ -404,5 +440,7 @@
     ir(0);
     traerGente();
     contarLosDeAntes();
+    // para quien lo monta: volver a pintar lo que se ve (sin animación ni foco)
+    return { repintar: function () { ir(paso, false, true); } };
   }
 }());

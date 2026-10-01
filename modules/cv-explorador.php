@@ -4,13 +4,16 @@
  * ─────────────────────────────────────────────────────────────────────
  * El bloque que ve el visitante: el globo, los filtros, la lista y la
  * ficha. Se coloca con el shortcode [caracool_vinos] o con el widget de
- * Elementor «Explorar los vinos». Tiene dos diseños, que se eligen en
- * Ajustes: «columnas» (el globo a la izquierda, debajo del hero de foto de
- * la página) y «mundo» (el globo llena la pantalla y hace de hero, con la
- * lista flotando encima). En «mundo» el plugin pone la clase
- * cv-diseno-mundo en el body, y la hoja apaga cualquier elemento de la
- * página con la clase cv-hero-foto: así el hero de foto de Elementor se
- * queda para «columnas» sin tocar la página al cambiar de diseño.
+ * Elementor «Explorar los vinos», en la página que cada web elija: en las
+ * demás el plugin no lee ni carga nada (ni la carta, ni los ajustes, ni
+ * scripts ni hojas). Tiene dos diseños, que se eligen en Ajustes:
+ * «columnas» (el globo a la izquierda, debajo del hero de foto de la
+ * página) y «mundo» (el globo llena la pantalla y hace de hero, con la
+ * lista flotando encima). En «mundo» la hoja apaga cualquier elemento de
+ * la página con la clase cv-hero-foto, y lo decide el propio bloque
+ * (body:has(.cv-explorador[data-diseno=mundo])), sin tocar el body desde
+ * PHP: así el hero de foto de Elementor se queda para «columnas» sin tocar
+ * la página al cambiar de diseño.
  *
  * El PHP pinta el esqueleto (modules/cv-bloque.php, generado desde el
  * laboratorio) y deja los datos en un JSON dentro del propio bloque; el
@@ -42,16 +45,6 @@ class Caracool_Vinos_Explorador {
 		add_shortcode( 'caracool_vinos', array( $this, 'shortcode' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'registrar' ) );
 		add_action( 'elementor/widgets/register', array( $this, 'widget_elementor' ) );
-		add_filter( 'body_class', array( $this, 'clase_body' ) );
-	}
-
-	/** Con el diseño «mundo», una clase en el body para apagar el hero de foto. */
-	public function clase_body( $clases ) {
-		$v = self::vista();
-		if ( 'mundo' === $v['diseno'] ) {
-			$clases[] = 'cv-diseno-mundo';
-		}
-		return $clases;
 	}
 
 	// ── Recursos ────────────────────────────────────────────────────────

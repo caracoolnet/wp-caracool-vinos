@@ -50,7 +50,10 @@ class Caracool_Vinos_Corazones {
 	const POR_AVISO    = 200; // vinos como mucho en un aviso (el primero lleva los que ya estaban guardados)
 
 	public function __construct() {
-		add_action( 'init', array( __CLASS__, 'repasar_tabla' ) );
+		// la tabla se comprueba solo donde se usa, nunca al servir una página
+		add_action( 'rest_api_init', array( __CLASS__, 'repasar_tabla' ), 1 );
+		add_action( 'admin_init', array( __CLASS__, 'repasar_tabla' ) );
+		add_action( 'caracool_vinos_comprobado', array( __CLASS__, 'repasar_tabla' ), 5 );
 		add_action( 'rest_api_init', array( $this, 'rutas' ) );
 		add_action( 'caracool_vinos_comprobado', array( __CLASS__, 'enviar' ) );
 		add_action( 'caracool_vinos_settings_panels', array( $this, 'panel' ), 30 );
@@ -64,6 +67,11 @@ class Caracool_Vinos_Corazones {
 	}
 
 	public static function repasar_tabla() {
+		static $hecho = false;
+		if ( $hecho ) {
+			return;
+		}
+		$hecho = true;
 		if ( (int) get_option( self::OPCION_BD, 0 ) < self::BD ) {
 			self::crear_tabla();
 		}

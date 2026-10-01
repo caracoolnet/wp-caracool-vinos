@@ -604,7 +604,10 @@
 /* En la web, el contenedor de Elementor va a ancho completo y sin relleno:
    la escena se da su propio aire en «columnas» y llena la pantalla en
    «mundo». Con «mundo», el hero de foto de la página se apaga (lleva la
-   clase cv-hero-foto y el plugin pone cv-diseno-mundo en el body). */
+   clase cv-hero-foto). Lo decide el propio bloque, sin que PHP toque el
+   body: así las páginas que no llevan el explorador no leen nada. La
+   segunda regla es la clase de siempre, por si alguien la puso a mano. */
+body:has(.cv-explorador[data-diseno=mundo]) .cv-hero-foto{display:none!important}
 .cv-diseno-mundo .cv-hero-foto{display:none!important}
 /* Con el mapa (escritorio) la escena queda fija y la página no se
    desplaza: el pie de la web se apaga y la rueda mueve la lista. En modo

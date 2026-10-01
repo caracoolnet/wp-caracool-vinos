@@ -1,5 +1,26 @@
 # Cambios
 
+## 0.7.3 · 1 de octubre de 2026
+
+- **Las demás páginas de la web no leen ni cargan nada de Vinos.** Hasta
+  ahora, un filtro del `body` leía los ajustes y la carta entera (unos
+  333 KB guardados) en todas las páginas, también en las que no llevan el
+  explorador, solo para decidir si ponía la clase `cv-diseno-mundo`. Ahora
+  el plugin no toca el `body`: el hero de foto (`cv-hero-foto`) lo apaga la
+  hoja cuando el bloque es «mundo», con
+  `body:has(.cv-explorador[data-diseno=mundo])`. La clase `cv-diseno-mundo`
+  sigue apagándolo si alguien la puso a mano. La regla nueva funciona en
+  Chrome y Edge, en Safari desde la 15.4 y en Firefox desde la 121; en un
+  navegador más antiguo el hero de foto se vería junto al globo. De paso,
+  el widget del editor de Elementor ya apaga el hero sin recargar.
+- **La tabla de los corazones se comprueba donde se usa**, no en cada
+  página: al abrir el REST de los corazones, en el panel de Ajustes y al
+  enviar a Bodega.
+- Pruebas: `simular.php` cuenta las lecturas de opciones de una página sin
+  el explorador (cero) y de una con él (la carta y los ajustes), y que el
+  `body` no lleve la clase. `probar-web.js` comprueba que el hero de foto
+  se apaga con «mundo» y no con «columnas», en Chromium y Firefox.
+
 ## 0.7.2 · 30 de septiembre de 2026
 
 - **«Ayúdame a elegir», sin hueco bajo la cabecera.** Con una cabecera fija

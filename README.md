@@ -29,6 +29,15 @@ licencia.
    shortcode `[caracool_vinos]`. El bloque es el globo (o la red) con la
    lista y los filtros. Los colores y las letras salen del Kit del sitio.
 
+**Solo en la página que lleve el explorador.** El plugin está pensado para
+una página concreta, la que cada web elija. En las demás no lee la carta
+ni los ajustes y no carga ningún script ni hoja: el widget y el shortcode
+son lo único que pide la carta y encola los archivos (desde la 0.7.3). La
+tabla de los corazones se comprueba solo al abrir su REST, en el panel de
+Ajustes y al enviar a Bodega, nunca al servir una página. `simular.php`
+lo vigila: cuenta las lecturas de opciones de una página sin el explorador
+y tienen que ser cero.
+
 **El diseño lo decide Caracool en Bodega** (la pestaña Diseño del
 cliente): las vistas que tiene la web (Mapa y Red; Lista va siempre), el
 diseño, la piel del panel de filtros y las esquinas. Llega con la carta y
@@ -161,10 +170,11 @@ Se eligen en Ajustes y se puede cambiar cuando se quiera.
   escritorio la escena es la pantalla entera y la página no se desplaza: el
   pie de la web se apaga y la rueda, caiga donde caiga, mueve la lista. En
   modo Lista el pie vuelve y la página se desplaza como siempre. Para que
-  el hero de foto de la página no se vea a la vez, el plugin pone la clase
-  `cv-diseno-mundo` en el `body` y la hoja apaga cualquier elemento con la
-  clase `cv-hero-foto`: basta con darle esa clase al contenedor del hero
-  en Elementor. En móvil se apila: título, globo y lista.
+  el hero de foto de la página no se vea a la vez, la hoja apaga cualquier
+  elemento con la clase `cv-hero-foto` cuando el bloque es «mundo» (lo
+  decide el propio bloque, con `body:has(.cv-explorador[data-diseno=mundo])`,
+  sin que el plugin toque el `body`): basta con darle esa clase al
+  contenedor del hero en Elementor. En móvil se apila: título, globo y lista.
 - **Columnas.** Debajo del hero de foto de la página: el globo a la
   izquierda, clavado mientras se baja por la lista, y la lista a la
   derecha. El título lo pone el hero, así que el plugin no pinta ninguno.
@@ -201,7 +211,7 @@ inc/caracool-licencia.php   la licencia, el eco, el aviso y las peticiones a Bod
 modules/cv-datos.php        la carta vigente y la anterior, tal y como llegan de Bodega
 modules/cv-conexion.php     recoger la carta: aviso, rutina y botón; las pestañas Carta y Conexión
 modules/cv-ajustes.php      la pestaña Ajustes
-modules/cv-explorador.php   shortcode, datos del bloque y la clase del body
+modules/cv-explorador.php   shortcode, datos del bloque y el widget (nada más: no engancha el body)
 modules/cv-corazones.php    los corazones de la gente: la cuenta, el REST, la pestaña Corazones y el envío a Bodega
 modules/cv-toques.php       «Tres toques»: el shortcode [caracool_vinos_toques] y sus datos
 modules/cv-widget-toques.php  el widget de Elementor «Tres toques»

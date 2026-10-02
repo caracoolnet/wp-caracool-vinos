@@ -5,10 +5,11 @@
  *
  *   1. el tipo (tinto, blanco, rosado, burbujas y, si la carta los tiene,
  *      generosos y dulces u otros), con cuántos hay de cada uno;
- *   2. hasta cuánto, por tramos de precio (los del widget; sin precios en
- *      la web, esta pregunta no sale);
- *   3. de aquí (las zonas que van delante en Ajustes), del resto del país
- *      o de fuera.
+ *   2. de aquí (las zonas que van delante en Ajustes), del resto del país
+ *      o de fuera;
+ *   3. hasta cuánto, por tramos de precio (los del widget; sin precios en
+ *      la web, esta pregunta no sale). El precio va el último (desde la
+ *      0.8.3): primero se elige el vino y después cuánto gastar.
  *
  * Cada opción dice cuántos vinos quedan si se elige, y las que dejarían la
  * lista vacía salen apagadas. Lo elegido queda arriba para cambiarlo. Los
@@ -142,14 +143,6 @@
       return '¿' + (n.length === 1 ? n[0] : n.slice(0, -1).join(', ') + ' o ' + n[n.length - 1]) + '?';
     }());
     var PASOS = [{ clave: 'tipo', titulo: tituloTipo, opciones: TIPOS }];
-    if (CFG.precios) {
-      var t = (CFG.tramos && CFG.tramos.length ? CFG.tramos : [40, 70, 150]).slice().sort(function (a, b) { return a - b; });
-      var ops = [{ v: '0-' + t[0], t: 'Hasta ' + euros(t[0]), a: 0, b: t[0] }];
-      for (var k = 1; k < t.length; k++) { ops.push({ v: t[k - 1] + '-' + t[k], t: t[k - 1] + ' a ' + euros(t[k]), a: t[k - 1], b: t[k] }); }
-      ops.push({ v: t[t.length - 1] + '-', t: 'Más de ' + euros(t[t.length - 1]), a: t[t.length - 1], b: Infinity });
-      ops.push({ v: '', t: 'Me da igual', chip: 'Cualquier precio', igual: true });
-      PASOS.push({ clave: 'precio', titulo: '¿Hasta <em>cuánto</em>?', opciones: ops, precio: true });
-    }
     var zonasAqui = []; VINOS.forEach(function (v) { if (v.origen === 'aqui' && zonasAqui.indexOf(legible(v.zona)) < 0) { zonasAqui.push(legible(v.zona)); } });
     var paisesFuera = {}; VINOS.forEach(function (v) { if (v.origen === 'fuera' && v.pais) { paisesFuera[v.pais] = (paisesFuera[v.pais] || 0) + 1; } });
     var fueraNombres = Object.keys(paisesFuera).sort(function (a, b) { return paisesFuera[b] - paisesFuera[a]; });
@@ -159,6 +152,14 @@
     origenes.push({ v: 'fuera', t: 'De fuera', sub: fueraNombres.length ? lista3(fueraNombres) : '' });
     origenes.push({ v: '', t: 'Me da igual', chip: 'De donde sea', igual: true });
     PASOS.push({ clave: 'origen', titulo: hayAqui ? '¿Algo de <em>aquí</em> o de fuera?' : '¿De <em>' + nombrePais + '</em> o de fuera?', opciones: origenes });
+    if (CFG.precios) {
+      var t = (CFG.tramos && CFG.tramos.length ? CFG.tramos : [40, 70, 150]).slice().sort(function (a, b) { return a - b; });
+      var ops = [{ v: '0-' + t[0], t: 'Hasta ' + euros(t[0]), a: 0, b: t[0] }];
+      for (var k = 1; k < t.length; k++) { ops.push({ v: t[k - 1] + '-' + t[k], t: t[k - 1] + ' a ' + euros(t[k]), a: t[k - 1], b: t[k] }); }
+      ops.push({ v: t[t.length - 1] + '-', t: 'Más de ' + euros(t[t.length - 1]), a: t[t.length - 1], b: Infinity });
+      ops.push({ v: '', t: 'Me da igual', chip: 'Cualquier precio', igual: true });
+      PASOS.push({ clave: 'precio', titulo: '¿Hasta <em>cuánto</em>?', opciones: ops, precio: true });
+    }
 
     var R = {}; PASOS.forEach(function (p) { R[p.clave] = undefined; });
     var paso = 0;

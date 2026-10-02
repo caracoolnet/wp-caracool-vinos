@@ -5,28 +5,35 @@
  * No se edita a mano: se afina el laboratorio y se vuelve a generar.
  *
  * Todo cuelga de .cv-explorador para no tocar nada fuera del bloque, y
- * los colores y las letras son los del Kit de Elementor, con el valor de
- * El Churra de reserva por si el Kit no define alguno.
+ * los colores y las letras son los del Kit de Elementor (la familia y,
+ * si el Kit no es el de El Churra, también la cursiva y el peso). Si el Kit no
+ * lleva los tonos con nombre de El Churra, PHP saca la paleta de los
+ * colores que sí tiene (el más claro, el más oscuro y un acento) y la
+ * pone en las variables --cv-k-*; si no hay Kit, vale el valor de El
+ * Churra de reserva.
  */
 .cv-explorador{
-  --cv-tinta:var(--e-global-color-secondary,#241610);
-  --cv-crema:var(--e-global-color-cremaclara,#FAF5EC);
-  --cv-crema2:var(--e-global-color-crema,#F2E9DC);
-  --cv-arena:var(--e-global-color-arena,#E9DCC6);
-  --cv-texto:var(--e-global-color-text,#5C4433);
-  --cv-borde:var(--e-global-color-borde,#E3D8C6);
-  --cv-rojo:var(--e-global-color-primary,#93210B);
-  --cv-ocre:var(--e-global-color-ocremadera,#725841);
-  --cv-naranja:var(--e-global-color-accent,#E08B4F);
+  --cv-tinta:var(--cv-k-tinta,var(--e-global-color-secondary,#241610));
+  --cv-crema:var(--cv-k-crema,var(--e-global-color-cremaclara,#FAF5EC));
+  --cv-crema2:var(--cv-k-crema2,var(--e-global-color-crema,#F2E9DC));
+  --cv-arena:var(--cv-k-arena,var(--e-global-color-arena,#E9DCC6));
+  --cv-texto:var(--cv-k-texto,var(--e-global-color-text,#5C4433));
+  --cv-borde:var(--cv-k-borde,var(--e-global-color-borde,#E3D8C6));
+  --cv-rojo:var(--cv-k-rojo,var(--e-global-color-primary,#93210B));
+  --cv-ocre:var(--cv-k-ocre,var(--e-global-color-ocremadera,#725841));
+  --cv-naranja:var(--cv-k-naranja,var(--e-global-color-accent,#E08B4F));
   --cv-curva:cubic-bezier(.22,1,.36,1);
   --cv-didona:var(--e-global-typography-primary-font-family,"Bodoni Moda"),Georgia,serif;
   --cv-sans:var(--e-global-typography-text-font-family,Inter),system-ui,sans-serif;
+  --cv-didona-estilo:var(--cv-k-didona-estilo,italic);
+  --cv-didona-peso:var(--cv-k-didona-peso,500);
+  --cv-peso-fino:var(--cv-k-peso-fino,300);
   /* el color del vino en la copa (rubí, paja y oro, salmón, oro pálido): no
      va al Kit, es un dato; se puede afinar desde el widget */
   --cv-vino-tinto:#E0435A;--cv-vino-blanco:#F2DC8A;--cv-vino-rosado:#F2A0A6;--cv-vino-espumoso:#FBECB4;
   /* la bodega de noche: sus propios tokens, aparte de los de día */
-  --cv-noche-fondo:#0F0907;--cv-noche-papel:#120B09;--cv-noche-texto:#FAF5EC;--cv-noche-suave:#B9A78F;--cv-noche-borde:rgba(250,245,236,.14);--cv-noche-arena:#2A1C16;
-  --cv-noche-acento:var(--e-global-color-accent,#E08B4F);
+  --cv-noche-fondo:var(--cv-k-noche-fondo,#0F0907);--cv-noche-papel:var(--cv-k-noche-papel,#120B09);--cv-noche-texto:var(--cv-k-noche-texto,#FAF5EC);--cv-noche-suave:var(--cv-k-noche-suave,#B9A78F);--cv-noche-borde:var(--cv-k-noche-borde,rgba(250,245,236,.14));--cv-noche-arena:var(--cv-k-noche-arena,#2A1C16);
+  --cv-noche-acento:var(--cv-k-noche-acento,var(--e-global-color-accent,#E08B4F));
   color:var(--cv-tinta);
   font:400 16px/1.6 var(--cv-sans);
   -webkit-font-smoothing:antialiased;
@@ -57,7 +64,7 @@
 /* el globo recorta lo que se sale del marco al acercarse: sin esto, a
    zoom 24 España ocupa la página entera */
 .cv-explorador .globo svg{overflow:hidden}
-.cv-explorador--vacio{padding:48px 0;font:300 18px/1.5 var(--cv-sans);color:var(--cv-texto);text-align:center}
+.cv-explorador--vacio{padding:48px 0;font:var(--cv-peso-fino,300) 18px/1.5 var(--cv-sans);color:var(--cv-texto);text-align:center}
 .cv-explorador.cv-explorador .oculto{display:none!important}
 
 /* ══ EL EXPLORADOR ═══════════════════════════════════════════════════════
@@ -83,8 +90,8 @@
 .cv-explorador.cv-explorador[data-escena=noche][data-modo=lista] .escena{background:var(--cv-crema)}
 .cv-explorador.cv-explorador .titulo{display:none}
 .cv-explorador.cv-explorador .titulo .rotulo{font:600 13px/1.2 var(--cv-sans);letter-spacing:.08em;text-transform:uppercase;margin:0 0 14px;color:var(--cv-texto)}
-.cv-explorador.cv-explorador .titulo h1{font:italic 500 clamp(44px,5.2vw,84px)/1 var(--cv-didona);letter-spacing:-.01em;margin:0 0 18px;color:var(--cv-tinta)}
-.cv-explorador.cv-explorador .titulo .entradilla{font:300 17px/26px var(--cv-sans);margin:0;color:var(--cv-texto);max-width:36ch}
+.cv-explorador.cv-explorador .titulo h1{font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) clamp(44px,5.2vw,84px)/1 var(--cv-didona);letter-spacing:-.01em;margin:0 0 18px;color:var(--cv-tinta)}
+.cv-explorador.cv-explorador .titulo .entradilla{font:var(--cv-peso-fino,300) 17px/26px var(--cv-sans);margin:0;color:var(--cv-texto);max-width:36ch}
 
 /* — columnas — */
 .cv-explorador.cv-explorador[data-diseno=columnas] .escena{max-width:1360px;margin:0 auto;padding:40px 32px 160px;display:grid;grid-template-columns:minmax(320px,44%) 1fr;gap:48px;align-items:start}
@@ -134,10 +141,32 @@
   .cv-explorador.cv-explorador[data-diseno=mundo] .globo__ayuda{display:none}
   .cv-explorador.cv-explorador[data-diseno=mundo] .panel{position:static;width:auto;margin:16px 16px 0;padding:0;background:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;display:block}
   .cv-explorador.cv-explorador[data-diseno=mundo] .lista,.cv-explorador.cv-explorador[data-diseno=mundo] .ficha{overflow:visible;padding:8px 0 0}
-  .cv-explorador.cv-explorador[data-diseno=mundo] .filtros{position:relative;padding:8px 0 16px}
+  .cv-explorador.cv-explorador[data-diseno=mundo] .filtros{position:relative;top:auto;padding:8px 0 16px}
   .cv-explorador.cv-explorador[data-diseno=mundo] .lista__pie{margin:40px 0 0;padding:16px 0 0}
   .cv-explorador.cv-explorador[data-diseno=mundo][data-modo=lista] .escena{padding:0 0 64px}
   .cv-explorador.cv-explorador[data-diseno=mundo][data-modo=lista] .titulo{padding:110px 20px 0;margin-bottom:20px}
+}
+/* Cómo encaja «mundo» en la web (lo mide el script, ver medirEncaje):
+   - data-solape=si, o sin atributo: la cabecera se superpone a lo alto del
+     bloque, como la de El Churra. Es el diseño tal cual está arriba.
+   - data-solape=no: la cabecera no lo tapa (ocupa su sitio, o no hay). La
+     escena empieza debajo de ella (--arriba) y los márgenes de arriba, que
+     despejaban una cabecera superpuesta, pasan a ser de página.
+   - data-encaje=bloque: el explorador no está arriba del todo. No llena la
+     pantalla ni fija la escena: es un bloque con su alto y la página se
+     desplaza como siempre. */
+.cv-explorador.cv-explorador[data-diseno=mundo][data-solape=no] .titulo{top:40px}
+.cv-explorador.cv-explorador[data-diseno=mundo][data-solape=no] .panel{top:32px}
+.cv-explorador.cv-explorador[data-diseno=mundo][data-solape=no][data-modo=lista] .escena{padding-top:56px}
+@media (min-width:901px){
+  .cv-explorador.cv-explorador[data-diseno=mundo][data-solape=no]:is([data-modo=mapa],[data-modo=red]){height:calc(100svh - var(--arriba,0px));min-height:0}
+  .cv-explorador.cv-explorador[data-diseno=mundo][data-solape=no]:is([data-modo=mapa],[data-modo=red]) .escena{inset:var(--arriba,0px) 0 0 0;min-height:0}
+  .cv-explorador.cv-explorador[data-diseno=mundo][data-encaje=bloque]:is([data-modo=mapa],[data-modo=red]){height:max(640px,calc(100svh - var(--cv-cabecera,0px)));min-height:0}
+  .cv-explorador.cv-explorador[data-diseno=mundo][data-encaje=bloque]:is([data-modo=mapa],[data-modo=red]) .escena{position:relative;inset:auto;height:100%}
+}
+@media (max-width:900px){
+  .cv-explorador.cv-explorador[data-diseno=mundo][data-solape=no] .titulo{padding-top:28px}
+  .cv-explorador.cv-explorador[data-diseno=mundo][data-solape=no][data-modo=lista] .titulo{padding-top:28px}
 }
 /* el globo apagado por el visitante, en los dos diseños */
 .cv-explorador.cv-explorador[data-modo=lista] .globo{display:none}
@@ -149,7 +178,7 @@
 .cv-explorador.cv-explorador .red.arrastrando canvas{cursor:grabbing}
 .cv-explorador.cv-explorador .red.sobre canvas{cursor:pointer}
 .cv-explorador.cv-explorador[data-diseno=columnas] .red .globo__marco{overflow:hidden;border-radius:2px}
-.cv-explorador.cv-explorador .red .globo__tip b{font:italic 500 15px/1.2 var(--cv-didona);display:block;margin-bottom:2px}
+.cv-explorador.cv-explorador .red .globo__tip b{font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) 15px/1.2 var(--cv-didona);display:block;margin-bottom:2px}
 .cv-explorador.cv-explorador .red .globo__zoom .mover{font-size:14px}
 .cv-explorador.cv-explorador .red .globo__zoom .mover.on{background:var(--cv-tinta);color:var(--cv-crema);border-color:var(--cv-tinta)}
 .cv-explorador.cv-explorador[data-diseno=mundo] .red .globo__zoom{bottom:28px}
@@ -174,23 +203,23 @@
 .cv-explorador.cv-explorador .globo svg.cerca .pais{stroke-width:.8}
 .cv-explorador.cv-explorador .globo svg.cerca .pais.activo,.cv-explorador.cv-explorador .globo svg.cerca .pais.activo:hover{fill:color-mix(in srgb,var(--cv-arena),var(--cv-rojo) 12%);stroke:var(--cv-rojo);stroke-width:1.1}
 .cv-explorador.cv-explorador .globo svg.cerca .pais.filtro,.cv-explorador.cv-explorador .globo svg.cerca .pais.filtro:hover{fill:color-mix(in srgb,var(--cv-arena),var(--cv-ocre) 12%);stroke:var(--cv-ocre);stroke-width:1}
-.cv-explorador.cv-explorador .globo .rotulo{font:italic 500 22px/1 var(--cv-didona);fill:var(--cv-tinta);pointer-events:none;paint-order:stroke;stroke:var(--cv-crema);stroke-width:5px;stroke-linejoin:round}
+.cv-explorador.cv-explorador .globo .rotulo{font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) 22px/1 var(--cv-didona);fill:var(--cv-tinta);pointer-events:none;paint-order:stroke;stroke:var(--cv-crema);stroke-width:5px;stroke-linejoin:round}
 .cv-explorador.cv-explorador .globo .rotulo small{font:600 10px/1 var(--cv-sans);letter-spacing:.08em;text-transform:uppercase}
 /* el punto de la zona: la bola de la casa, con un aro que late al llegar */
 .cv-explorador.cv-explorador .globo .punto{fill:var(--cv-tinta);stroke:var(--cv-crema);stroke-width:1.5;pointer-events:none}
 .cv-explorador.cv-explorador .globo .zona{fill:var(--cv-crema);stroke:var(--cv-tinta);stroke-width:1;opacity:.85;cursor:pointer;transition:fill .2s ease}
 .cv-explorador.cv-explorador .globo .zona:hover{fill:var(--cv-tinta)}
 .cv-explorador.cv-explorador .globo .zona--halo{fill:transparent;stroke:none;cursor:pointer}
-.cv-explorador.cv-explorador .globo__tip small{display:block;font:300 11.5px/1.3 var(--cv-sans);opacity:.8;margin-top:3px;white-space:normal;max-width:220px}
+.cv-explorador.cv-explorador .globo__tip small{display:block;font:var(--cv-peso-fino,300) 11.5px/1.3 var(--cv-sans);opacity:.8;margin-top:3px;white-space:normal;max-width:220px}
 .cv-explorador.cv-explorador .globo .aro{fill:none;stroke:var(--cv-tinta);stroke-width:1;pointer-events:none;opacity:0}
 .cv-explorador.cv-explorador .globo .aro.late{animation:cv-aro-late 1.4s var(--cv-curva) 1}
 @keyframes cv-aro-late{0%{opacity:.9;r:6}100%{opacity:0;r:26}}
 .cv-explorador.cv-explorador .globo__pie{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin:14px auto 0;max-width:640px;font:400 13px/1.4 var(--cv-sans);color:var(--cv-texto);min-height:20px}
-.cv-explorador.cv-explorador .globo__pie b{font:italic 500 20px/1.1 var(--cv-didona);color:var(--cv-tinta)}
+.cv-explorador.cv-explorador .globo__pie b{font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) 20px/1.1 var(--cv-didona);color:var(--cv-tinta)}
 .cv-explorador.cv-explorador .globo__pie small{font:600 11.5px/1.2 var(--cv-sans);letter-spacing:.08em;text-transform:uppercase}
-.cv-explorador.cv-explorador .globo__ayuda{font:300 12.5px/1.4 var(--cv-sans);color:var(--cv-texto);opacity:.7;text-align:center;margin:8px 0 0}
+.cv-explorador.cv-explorador .globo__ayuda{font:var(--cv-peso-fino,300) 12.5px/1.4 var(--cv-sans);color:var(--cv-texto);opacity:.7;text-align:center;margin:8px 0 0}
 .cv-explorador.cv-explorador .globo__zoom{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:2}
-.cv-explorador.cv-explorador .globo__zoom button{width:32px;height:32px;border-radius:50%;border:1px solid var(--cv-borde);background:var(--cv-crema);color:var(--cv-tinta);font:300 20px/1 var(--cv-sans);display:flex;align-items:center;justify-content:center;padding:0;transition:border-color .25s ease,background .25s ease}
+.cv-explorador.cv-explorador .globo__zoom button{width:32px;height:32px;border-radius:50%;border:1px solid var(--cv-borde);background:var(--cv-crema);color:var(--cv-tinta);font:var(--cv-peso-fino,300) 20px/1 var(--cv-sans);display:flex;align-items:center;justify-content:center;padding:0;transition:border-color .25s ease,background .25s ease}
 .cv-explorador.cv-explorador .globo__zoom button:hover{border-color:var(--cv-tinta)}
 .cv-explorador.cv-explorador .globo__zoom button:disabled{opacity:.35;cursor:default;border-color:var(--cv-borde)}
 .cv-explorador.cv-explorador .globo__tip{position:absolute;pointer-events:none;background:var(--cv-tinta);color:var(--cv-crema);font:400 12.5px/1.2 var(--cv-sans);padding:7px 10px;border-radius:2px;transform:translate(-50%,calc(-100% - 12px));white-space:nowrap;opacity:0;transition:opacity .15s ease;z-index:3}
@@ -216,7 +245,8 @@
 /* clavados, tapan también lo que queda debajo de la cabecera de la página
    (que es transparente): así la lista no se ve pasar por detrás del menú */
 .cv-explorador.cv-explorador .filtros.clavado::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:var(--cv-cabecera,0px);background:var(--cv-crema)}
-@media (max-width:900px){.cv-explorador.cv-explorador .filtros{position:relative}}
+/* (en el móvil no se clavan: sin top, que con position:relative los bajaría el alto de la cabecera encima de la lista) */
+@media (max-width:900px){.cv-explorador.cv-explorador .filtros{position:relative;top:auto}}
 /* el conmutador del visitante: con mapa o solo la lista */
 .cv-explorador.cv-explorador .filtros__cola{margin-left:auto;display:inline-flex;align-items:center;gap:8px}
 .cv-explorador.cv-explorador .modo{display:inline-flex;border:1px solid var(--cv-borde);border-radius:999px;padding:2px;gap:2px}
@@ -296,6 +326,9 @@
 .cv-explorador.cv-explorador .campo:hover{color:var(--cv-tinta)}
 .cv-explorador.cv-explorador .campo:has(.sel:focus-visible){outline:2px solid var(--cv-tinta);outline-offset:2px}
 .cv-explorador.cv-explorador .campo.on .ico--flecha{display:none}
+/* Zona espera al país: apagada hasta que se elige uno (con más de un país en la carta) */
+.cv-explorador.cv-explorador .campo.espera{opacity:.42}
+.cv-explorador.cv-explorador .campo.espera:hover{color:var(--cv-texto)}
 .cv-explorador.cv-explorador .campo__quitar{position:relative;z-index:2;flex:none;width:24px;height:24px;margin:-4px -6px -4px auto;border:0;border-radius:50%;background:none;color:inherit;display:inline-flex;align-items:center;justify-content:center;padding:0}
 .cv-explorador.cv-explorador .campo__quitar .ico{width:13px;height:13px}
 .cv-explorador.cv-explorador .campo__quitar:hover{background:color-mix(in srgb,currentColor 16%,transparent)}
@@ -327,6 +360,7 @@
 .cv-explorador.cv-explorador[data-panel=pildoras] .campo.on .campo__rot{display:none}
 .cv-explorador.cv-explorador[data-panel=pildoras] .campo.on .campo__val{display:block}
 .cv-explorador.cv-explorador[data-panel=pildoras] .campo:hover{border-color:var(--cv-tinta)}
+.cv-explorador.cv-explorador[data-panel=pildoras] .campo.espera:hover{border-color:var(--cv-borde)}
 .cv-explorador.cv-explorador[data-panel=pildoras] .campo.on{background:var(--cv-tinta);border-color:var(--cv-tinta);color:var(--cv-crema)}
 .cv-explorador.cv-explorador[data-panel=pildoras] .mis-boton{height:32px}
 .cv-explorador.cv-explorador[data-panel=pildoras] .modo button{height:26px;padding:0 11px 0 9px}
@@ -354,11 +388,13 @@
 .cv-explorador.cv-explorador[data-panel=ficha] .chip:hover{color:var(--cv-tinta);border-color:transparent}
 .cv-explorador.cv-explorador[data-panel=ficha] .chip.on{background:none;color:var(--cv-tinta);box-shadow:inset 0 -1.5px 0 var(--cv-tinta)}
 .cv-explorador.cv-explorador[data-panel=ficha] .buscar-caja > .ico{left:0;width:18px;height:18px}
-.cv-explorador.cv-explorador[data-panel=ficha] .buscar-caja .buscar{border:0;border-bottom:1px solid var(--cv-borde);border-radius:0;background:none;padding:10px 34px 11px 30px;font:italic 500 19px/1.2 var(--cv-didona);letter-spacing:-.005em}
+.cv-explorador.cv-explorador[data-panel=ficha] .buscar-caja .buscar{border:0;border-bottom:1px solid var(--cv-borde);border-radius:0;background:none;padding:10px 34px 11px 30px;font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) 19px/1.2 var(--cv-didona);letter-spacing:-.005em}
 .cv-explorador.cv-explorador[data-panel=ficha] .buscar-caja .buscar::placeholder{opacity:.5}
 .cv-explorador.cv-explorador[data-panel=ficha] .buscar-caja .buscar:focus,.cv-explorador.cv-explorador[data-panel=ficha] .buscar-caja .buscar.on{border-bottom-color:var(--cv-tinta)}
 .cv-explorador.cv-explorador[data-panel=ficha] .buscar__borrar{right:0}
 .cv-explorador.cv-explorador[data-panel=ficha] .campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:0;overflow:hidden;margin-top:2px}
+.cv-explorador.cv-explorador[data-panel=ficha] .campos[data-n="6"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cv-explorador.cv-explorador[data-panel=ficha] .campo.espera:hover{background:none}
 .cv-explorador.cv-explorador[data-panel=ficha] .campo{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:6px;row-gap:6px;align-items:center;padding:10px 9px 11px 11px;box-shadow:-1px 0 0 var(--cv-borde),0 -1px 0 var(--cv-borde)}
 .cv-explorador.cv-explorador[data-panel=ficha] .campo .ico--campo{grid-column:1;grid-row:1;width:13px;height:13px}
 .cv-explorador.cv-explorador[data-panel=ficha] .campo__rot{grid-column:2/4;grid-row:1;font:600 10px/1 var(--cv-sans);letter-spacing:.1em;text-transform:uppercase}
@@ -401,6 +437,9 @@
 .cv-explorador.cv-explorador[data-panel=mosaico] .buscar-caja .buscar{border:0;border-radius:var(--cv-radio-campo,12px);background:color-mix(in srgb,var(--cv-tinta) 6%,transparent);padding:12px 40px 12px 42px}
 .cv-explorador.cv-explorador[data-panel=mosaico] .buscar-caja .buscar:focus,.cv-explorador.cv-explorador[data-panel=mosaico] .buscar-caja .buscar.on{box-shadow:inset 0 0 0 1px var(--cv-tinta)}
 .cv-explorador.cv-explorador[data-panel=mosaico] .campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:6px}
+/* (data-n: cuántos campos se ven; seis caben en una fila, como cinco) */
+.cv-explorador.cv-explorador[data-panel=mosaico] .campos[data-n="6"]{grid-template-columns:repeat(6,minmax(0,1fr))}
+.cv-explorador.cv-explorador[data-panel=mosaico] .campo.espera:hover{border-color:var(--cv-borde)}
 .cv-explorador.cv-explorador[data-panel=mosaico] .campo{flex-direction:column;justify-content:center;gap:8px;height:66px;padding:8px;border:1px solid var(--cv-borde);border-radius:var(--cv-radio-campo,12px);text-align:center}
 .cv-explorador.cv-explorador[data-panel=mosaico] .campo .ico--campo{width:21px;height:21px;stroke-width:1.35}
 .cv-explorador.cv-explorador[data-panel=mosaico] .campo__rot{max-width:100%;font:600 10px/1 var(--cv-sans);letter-spacing:.1em;text-transform:uppercase}
@@ -428,8 +467,14 @@
 .cv-explorador.cv-explorador[data-panel=mosaico] .dianoche button{position:relative;z-index:1;width:28px;height:28px;border-radius:var(--cv-radio-boton,50%)}
 .cv-explorador.cv-explorador[data-panel=mosaico] .dianoche button.on{color:var(--cv-crema)}
 .cv-explorador.cv-explorador[data-panel=mosaico] .dianoche button:not(.on):hover{color:var(--cv-tinta)}
+/* seis campos en una fila necesitan unos 80 px cada uno: con menos, en dos filas de tres */
+@container cv-filtros (max-width:500px){
+  .cv-explorador.cv-explorador[data-panel=mosaico] .campos[data-n="6"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
 @container cv-filtros (max-width:420px){
   .cv-explorador.cv-explorador[data-panel=mosaico] .campos{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+  .cv-explorador.cv-explorador[data-panel=mosaico] .campos[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .cv-explorador.cv-explorador[data-panel=mosaico] .campos[data-n="6"]{grid-template-columns:repeat(3,minmax(0,1fr))}
   .cv-explorador.cv-explorador[data-panel=mosaico] .campo{height:60px;padding:6px 4px;gap:7px}
   .cv-explorador.cv-explorador[data-panel=mosaico] .campo__rot{font-size:9.5px;letter-spacing:.05em}
   .cv-explorador.cv-explorador[data-panel=mosaico] .campo__val{font-size:11px}
@@ -439,18 +484,24 @@
 /* ── La lista ──────────────────────────────────────────────────────────── */
 .cv-explorador.cv-explorador .lista{padding-top:8px}
 .cv-explorador.cv-explorador .grupo{padding:28px 0 4px;display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--cv-borde);margin-bottom:6px}
-.cv-explorador.cv-explorador .grupo h3{font:italic 500 24px/1.1 var(--cv-didona);margin:0;letter-spacing:-.01em;color:var(--cv-tinta)}
+.cv-explorador.cv-explorador .grupo h3{font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) 24px/1.1 var(--cv-didona);margin:0;letter-spacing:-.01em;color:var(--cv-tinta)}
 .cv-explorador.cv-explorador .grupo small{font:600 11.5px/1.2 var(--cv-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--cv-texto)}
 .cv-explorador.cv-explorador .grupo em{font-style:normal;margin-left:auto;font:400 13px/1 var(--cv-sans);color:var(--cv-texto)}
 .cv-explorador.cv-explorador .vino{display:grid;grid-template-columns:1fr auto;gap:4px 24px;align-items:baseline;padding:11px 0 11px 22px;border:0;background:none;width:100%;text-align:left;position:relative;border-bottom:1px solid transparent}
 .cv-explorador.cv-explorador .vino::before{content:"";position:absolute;left:0;top:19px;width:8px;height:8px;border-radius:50%;border:1px solid var(--cv-tinta);background-image:linear-gradient(var(--cv-tinta),var(--cv-tinta));background-repeat:no-repeat;background-size:0% 100%;background-position:right center;transition:background-size .5s var(--cv-curva),background-position 0s .5s}
 .cv-explorador.cv-explorador .fila:hover .vino::before,.cv-explorador.cv-explorador .vino.activo::before{background-size:100% 100%;background-position:left center;transition:background-size .5s var(--cv-curva),background-position 0s}
+/* el punto delante de cada vino es de El Churra: en otra web (data-punto=no,
+   lo decide Caracool en Bodega) no hay punto, el vino va pegado a la
+   izquierda y lo que marca la fila al pasar es su fondo suave */
+.cv-explorador.cv-explorador[data-punto=no] .vino{padding-left:0}
+.cv-explorador.cv-explorador[data-punto=no] .vino::before{display:none}
+.cv-explorador.cv-explorador[data-punto=no] .subgrupo{margin-left:0}
 .cv-explorador.cv-explorador .vino.activo .vino__nombre{color:var(--cv-rojo)}
 .cv-explorador.cv-explorador .vino__nombre{grid-column:1;grid-row:1;font:500 16px/1.3 var(--cv-sans);color:var(--cv-tinta);transition:color .3s ease}
-.cv-explorador.cv-explorador .vino__nombre span{font-weight:300;color:var(--cv-texto);margin-left:8px}
+.cv-explorador.cv-explorador .vino__nombre span{font-weight:var(--cv-peso-fino,300);color:var(--cv-texto);margin-left:8px}
 .cv-explorador.cv-explorador .vino__nombre em{font:600 10px/1 var(--cv-sans);font-style:normal;letter-spacing:.08em;text-transform:uppercase;color:var(--cv-texto);border:1px solid var(--cv-borde);border-radius:999px;padding:3px 7px;margin-left:10px;vertical-align:2px}
 .cv-explorador.cv-explorador .vino__nombre em.rp{color:var(--cv-rojo);border-color:currentColor;opacity:.85}
-.cv-explorador.cv-explorador .vino__datos{grid-column:1;grid-row:2;font:300 13.5px/1.4 var(--cv-sans);color:var(--cv-texto)}
+.cv-explorador.cv-explorador .vino__datos{grid-column:1;grid-row:2;font:var(--cv-peso-fino,300) 13.5px/1.4 var(--cv-sans);color:var(--cv-texto)}
 /* la ubicación en bodega: el número o las letras que la carta pone delante
    de cada vino. Es para la sala, no para el cliente: pequeño y apagado */
 .cv-explorador.cv-explorador .sitio{display:inline-block;margin-left:10px;padding:2px 5px 1px;border:1px solid var(--cv-borde);border-radius:3px;font:500 10.5px/1 ui-monospace,"SF Mono",Menlo,Consolas,monospace;letter-spacing:.05em;color:var(--cv-texto);opacity:.6;vertical-align:1px;white-space:nowrap}
@@ -458,7 +509,7 @@
 .cv-explorador.cv-explorador .vino__datos b{font-weight:500}
 .cv-explorador.cv-explorador .vino__precio{grid-column:2;grid-row:1/3;align-self:center;font:500 17px/1 var(--cv-sans);font-variant-numeric:tabular-nums;color:var(--cv-tinta);white-space:nowrap}
 .cv-explorador.cv-explorador.sin-precio .vino__precio{display:none}
-.cv-explorador.cv-explorador .vacio{padding:64px 0;text-align:center;color:var(--cv-texto);font:300 16px/1.5 var(--cv-sans)}
+.cv-explorador.cv-explorador .vacio{padding:64px 0;text-align:center;color:var(--cv-texto);font:var(--cv-peso-fino,300) 16px/1.5 var(--cv-sans)}
 .cv-explorador.cv-explorador .lista.oculto + .ficha + .lista__pie{display:none}
 .cv-explorador.cv-explorador .lista__pie{margin:40px 0 0;padding-top:16px;border-top:1px solid var(--cv-borde);font:400 12.5px/1.5 var(--cv-sans);color:var(--cv-texto)}
 .cv-explorador.cv-explorador .subgrupo{margin:18px 0 2px 22px;font:600 11px/1.2 var(--cv-sans);letter-spacing:.1em;text-transform:uppercase;color:var(--cv-texto)}
@@ -475,6 +526,13 @@
    la lista con la rueda bajo el ratón) la fila anterior seguía encendida
    un instante y la banda parecía saltar arriba y volver */
 .cv-explorador.cv-explorador .fila{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin:0 -12px;padding:0 12px;border-radius:2px}
+/* Con 459 filas, el navegador no calcula ni pinta las que están fuera de la
+   pantalla (cada una se estima en 67 px, o 86 en el móvil, hasta que se ve y
+   recuerda su alto). La fila que tiene el foco se pinta entera, para que el
+   anillo no se recorte. */
+.cv-explorador.cv-explorador .fila{content-visibility:auto;contain-intrinsic-block-size:auto 67px}
+.cv-explorador.cv-explorador .fila:focus-within{content-visibility:visible}
+@media (max-width:640px){.cv-explorador.cv-explorador .fila{contain-intrinsic-block-size:auto 86px}}
 .cv-explorador.cv-explorador .fila:hover,.cv-explorador.cv-explorador .fila:has(.vino.activo){background:color-mix(in srgb,var(--cv-tinta) 4%,transparent)}
 .cv-explorador.cv-explorador .corazon{width:34px;height:34px;border:0;background:none;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--cv-borde);border-radius:50%;transition:color .25s ease,transform .25s var(--cv-curva)}
 .cv-explorador.cv-explorador .corazon svg{width:18px;height:18px;display:block}
@@ -550,17 +608,17 @@
 .cv-explorador.cv-explorador .mis-boton.late svg{animation:cv-corazon-late .5s var(--cv-curva)}
 /* la cabecera de la vista de mis vinos, y el vacío */
 .cv-explorador.cv-explorador .mis-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 16px;flex-wrap:wrap;padding:18px 0 14px;border-bottom:1px solid var(--cv-borde)}
-.cv-explorador.cv-explorador .mis-cab h3{font:italic 500 28px/1.05 var(--cv-didona);margin:0 0 6px;letter-spacing:-.01em;color:var(--cv-tinta)}
-.cv-explorador.cv-explorador .mis-cab p{margin:0;font:300 13px/1.45 var(--cv-sans);color:var(--cv-texto);max-width:38ch}
+.cv-explorador.cv-explorador .mis-cab h3{font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) 28px/1.05 var(--cv-didona);margin:0 0 6px;letter-spacing:-.01em;color:var(--cv-tinta)}
+.cv-explorador.cv-explorador .mis-cab p{margin:0;font:var(--cv-peso-fino,300) 13px/1.45 var(--cv-sans);color:var(--cv-texto);max-width:38ch}
 .cv-explorador.cv-explorador .mis-cab .mis-acciones{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;margin-left:auto}
-.cv-explorador.cv-explorador .mis-vacio{padding:40px 0 52px;text-align:center;font:300 15px/1.55 var(--cv-sans);color:var(--cv-texto);max-width:34ch;margin:0 auto}
+.cv-explorador.cv-explorador .mis-vacio{padding:40px 0 52px;text-align:center;font:var(--cv-peso-fino,300) 15px/1.55 var(--cv-sans);color:var(--cv-texto);max-width:34ch;margin:0 auto}
 .cv-explorador.cv-explorador .mis-vacio svg{width:30px;height:30px;display:block;margin:0 auto 14px;color:var(--cv-arena)}
 .cv-explorador.cv-explorador .mis-vacio svg path{fill:currentColor;stroke:var(--cv-ocre);stroke-width:1.2;stroke-linejoin:round}
-.cv-explorador.cv-explorador .mis-vacio b{display:block;font:italic 500 22px/1.1 var(--cv-didona);color:var(--cv-tinta);margin-bottom:8px}
+.cv-explorador.cv-explorador .mis-vacio b{display:block;font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) 22px/1.1 var(--cv-didona);color:var(--cv-tinta);margin-bottom:8px}
 .cv-explorador.cv-explorador .compartir{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--cv-tinta);background:transparent;border-radius:999px;padding:6px 12px;font:500 12.5px/1 var(--cv-sans);color:var(--cv-tinta);transition:background .25s ease,color .25s ease}
 .cv-explorador.cv-explorador .compartir:hover{background:var(--cv-tinta);color:var(--cv-crema)}
 .cv-explorador.cv-explorador .compartida{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:16px 0 4px;padding:14px 16px;border:1px solid var(--cv-borde);border-radius:2px;font:400 14px/1.4 var(--cv-sans);color:var(--cv-texto)}
-.cv-explorador.cv-explorador .compartida b{font:italic 500 20px/1.1 var(--cv-didona);color:var(--cv-tinta)}
+.cv-explorador.cv-explorador .compartida b{font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) 20px/1.1 var(--cv-didona);color:var(--cv-tinta)}
 .cv-explorador.cv-explorador .compartida .compartir{margin-left:auto}
 .cv-explorador.cv-explorador .aviso-flotante{position:fixed;left:50vw;bottom:28px;transform:translate(-50%,12px);background:var(--cv-tinta);color:var(--cv-crema);font:500 13px/1 var(--cv-sans);padding:11px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .35s var(--cv-curva);z-index:20}
 .cv-explorador.cv-explorador .aviso-flotante.ver{opacity:1;transform:translate(-50%,0)}
@@ -578,10 +636,10 @@
 .cv-explorador.cv-explorador .ficha__volver::before{content:"";width:8px;height:8px;border-radius:50%;border:1px solid var(--cv-rojo);background:var(--cv-rojo)}
 .cv-explorador.cv-explorador .ficha__rotulo{font:600 11.5px/1.2 var(--cv-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--cv-texto);margin:0 0 8px}
 .cv-explorador.cv-explorador .ficha__cabeza{display:flex;align-items:baseline;justify-content:space-between;gap:24px;padding-bottom:10px;border-bottom:1px solid var(--cv-borde)}
-.cv-explorador.cv-explorador .ficha h2{font:italic 500 clamp(28px,3vw,40px)/1.05 var(--cv-didona);letter-spacing:-.01em;margin:0}
-.cv-explorador.cv-explorador .ficha h2 span{font:300 .55em/1 var(--cv-sans);color:var(--cv-texto);margin-left:10px;letter-spacing:0}
+.cv-explorador.cv-explorador .ficha h2{font:var(--cv-didona-estilo,italic) var(--cv-didona-peso,500) clamp(28px,3vw,40px)/1.05 var(--cv-didona);letter-spacing:-.01em;margin:0}
+.cv-explorador.cv-explorador .ficha h2 span{font:var(--cv-peso-fino,300) .55em/1 var(--cv-sans);color:var(--cv-texto);margin-left:10px;letter-spacing:0}
 .cv-explorador.cv-explorador .ficha__precio{font:500 24px/1 var(--cv-sans);font-variant-numeric:tabular-nums;white-space:nowrap}
-.cv-explorador.cv-explorador .ficha__precio small{font:300 12px/1 var(--cv-sans);color:var(--cv-texto);margin-left:5px}
+.cv-explorador.cv-explorador .ficha__precio small{font:var(--cv-peso-fino,300) 12px/1 var(--cv-sans);color:var(--cv-texto);margin-left:5px}
 .cv-explorador.cv-explorador.sin-precio .ficha__precio{display:none}
 .cv-explorador.cv-explorador .ficha__datos{margin:10px 0 0;font:400 15px/1.55 var(--cv-sans);color:var(--cv-texto)}
 .cv-explorador.cv-explorador .ficha__datos b{font-weight:500;color:var(--cv-tinta)}
@@ -591,7 +649,12 @@
 .cv-explorador.cv-explorador .ficha__mas button::before{content:"";position:absolute;left:10px;top:50%;margin-top:-4px;width:8px;height:8px;border-radius:50%;border:1px solid var(--cv-rojo);background-image:linear-gradient(var(--cv-rojo),var(--cv-rojo));background-repeat:no-repeat;background-size:0% 100%;background-position:right center;transition:background-size .5s var(--cv-curva)}
 .cv-explorador.cv-explorador .ficha__mas button:hover{border-color:var(--cv-tinta)}
 .cv-explorador.cv-explorador .ficha__mas button:hover::before{background-size:100% 100%;background-position:left center}
-.cv-explorador.cv-explorador .ficha__nota{margin-top:22px;font:300 12.5px/1.5 var(--cv-sans);color:var(--cv-texto);opacity:.7}
+/* los puntos de la ficha («Volver a la lista» y los botones de «Los otros…»)
+   son el mismo gesto de El Churra que el punto de la lista: con data-punto=no
+   no salen, y el botón queda centrado */
+.cv-explorador.cv-explorador[data-punto=no] .ficha__volver::before,.cv-explorador.cv-explorador[data-punto=no] .ficha__mas button::before{display:none}
+.cv-explorador.cv-explorador[data-punto=no] .ficha__mas button{padding-left:12px}
+.cv-explorador.cv-explorador .ficha__nota{margin-top:22px;font:var(--cv-peso-fino,300) 12.5px/1.5 var(--cv-sans);color:var(--cv-texto);opacity:.7}
 .cv-explorador.cv-explorador .ficha__nota code{font:500 11.5px/1 ui-monospace,Menlo,monospace;background:var(--cv-crema2);padding:2px 6px;border-radius:3px}
 @media (max-width:600px){.cv-explorador.cv-explorador .ficha__cabeza{flex-wrap:wrap;gap:6px 16px}}
 
@@ -614,7 +677,7 @@ body:has(.cv-explorador[data-diseno=mundo]) .cv-hero-foto{display:none!important
    Lista el pie vuelve y la página se desplaza como siempre. Va por :has
    para no depender de una clase en el body que ponga el script. */
 @media (min-width:901px){
-  body:has(.cv-explorador[data-diseno=mundo]:is([data-modo=mapa],[data-modo=red])){overflow:hidden}
-  body:has(.cv-explorador[data-diseno=mundo]:is([data-modo=mapa],[data-modo=red])) .elementor-location-footer,
-  body:has(.cv-explorador[data-diseno=mundo]:is([data-modo=mapa],[data-modo=red])) footer[data-elementor-type="footer"]{display:none}
+  body:has(.cv-explorador[data-diseno=mundo]:not([data-encaje=bloque]):is([data-modo=mapa],[data-modo=red])){overflow:hidden}
+  body:has(.cv-explorador[data-diseno=mundo]:not([data-encaje=bloque]):is([data-modo=mapa],[data-modo=red])) .elementor-location-footer,
+  body:has(.cv-explorador[data-diseno=mundo]:not([data-encaje=bloque]):is([data-modo=mapa],[data-modo=red])) footer[data-elementor-type="footer"]{display:none}
 }

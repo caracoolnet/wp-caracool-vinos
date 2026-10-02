@@ -38,6 +38,13 @@ Ajustes y al enviar a Bodega, nunca al servir una página. `simular.php`
 lo vigila: cuenta las lecturas de opciones de una página sin el explorador
 y tienen que ser cero.
 
+**El mapa, solo con el modo Mapa.** La geometría del mundo (110m y, detrás,
+50m) no viaja con la página: se descarga al abrir el modo Mapa. En Lista o
+en Red no se baja nada, y el globo solo gira, y solo gasta, cuando se ve
+(`pruebas/geometria.js` lo comprueba). Los acercamientos por país están
+calculados en la plantilla (`ZOOM_PAIS`); si cambia la geometría, se
+vuelve a sacar la tabla con `labs/vinos/zooms-pais.js`.
+
 **El diseño lo decide Caracool en Bodega** (la pestaña Diseño del
 cliente): las vistas que tiene la web (Mapa y Red; Lista va siempre), el
 diseño, la piel del panel de filtros y las esquinas. Llega con la carta y
@@ -73,6 +80,19 @@ caerían en la reserva. Para eso está la pestaña **Estilo** del widget:
 - **De noche**: fondo, papel, textos, bordes, arena y acento de la escena
   de noche (el acento, enlazado al Acento del Kit).
 
+**Fuera de El Churra** (desde la 0.8.1). Si el Kit no lleva los colores
+con nombre de El Churra (`cremaclara`), el plugin saca la paleta de los
+colores que sí tiene: el más claro es el fondo de día y el texto de noche,
+el más oscuro la tinta de día y el fondo de noche, y el más vivo el acento;
+la tierra del globo, los países con vinos y los filetes son mezclas de esos
+tres. Los pone en el bloque como `--cv-k-*`, por debajo de lo que diga el
+widget. Lo mismo con la letra: la familia es siempre la del Kit, y con
+otro Kit la cursiva y los pesos son los de su tipografía Principal (los
+títulos) y la de Texto (el resto), también en el lienzo del mapa y la red.
+En Ajustes, la tarjeta «Colores y letra» deja fijar cualquiera de los
+tres colores entre los del Kit y la forma de la letra; con todo en
+Automático, cada web se ve con lo suyo sin tocar nada.
+
 Ningún control estila nada: cada uno escribe su token en el bloque
 (`{{WRAPPER}} .cv-explorador { --cv-tinta: … }`), y la hoja cuelga de los
 tokens. Así no hay pelea con el Estilo del tema, y el shortcode sin
@@ -85,8 +105,9 @@ al pasar, el velo del panel, la banda de la fila) salen de los tokens con
 El panel va en tres tramos separados por un filete: arriba los tipos, cada
 uno con una gota del color del vino (el champagne con un aro dorado, el
 mágnum con una botella); en medio la búsqueda, con lupa y un aspa para
-borrar, y los cinco filtros (uva, zona, bodega, precio y Parker), cada uno
-con su icono; y abajo «Mis vinos» a la izquierda y, a la derecha, Mapa ·
+borrar, y los filtros (uva, país, zona, bodega, precio y Parker), cada uno
+con su icono (País solo con vinos de más de un país, y entonces Zona espera
+a que se elija uno; Parker solo si algún vino trae puntos); y abajo «Mis vinos» a la izquierda y, a la derecha, Mapa ·
 Red · Lista y el sol y la luna.
 
 Cada filtro es un desplegable nativo puesto encima, transparente: se abre
@@ -122,6 +143,13 @@ en un `<style>` pequeño junto al bloque. Con «Las de la piel», o si el Kit
 no dice nada, cada piel lleva las suyas. En El Churra los botones del Kit tienen
 esquinas de 2 px, así que el mosaico sale casi recto.
 
+**Los puntos de El Churra** (también desde Bodega, «Punto delante del
+vino»). Son tres: el aro delante de cada vino de la lista, el de los
+botones «Los otros… de…» de la ficha y el punto de «Volver a la lista». La
+raíz del bloque lleva `data-punto="si"` o `"no"`; si Bodega no dice nada,
+salen solo con el Kit de El Churra. Sin punto, el vino va pegado a la
+izquierda y los botones de la ficha quedan centrados.
+
 ## De día y de noche
 
 De día son los colores de la web. De noche, la escena pone la bodega a
@@ -146,13 +174,22 @@ esa cabecera documenta para estos casos; sin ella, no pasa nada.
 ## La red
 
 El tercer modo, junto a Mapa y Lista (`red="no"` en el shortcode, o el
-interruptor de Ajustes, lo quitan). Países, zonas, bodegas y uvas, unidos
-por hilos y colocados en 3D por fuerzas, en el navegador, con lo que haya
+interruptor de Ajustes, lo quitan). Arranca solo con los países y las
+zonas: al pinchar un país salen sus uvas, al pinchar una zona sus uvas y
+sus bodegas (desde la 0.8.1; antes salía todo a la vez y abrumaba), y
+desde la 0.8.3 se abren en una nube alrededor del elegido: un país con sus
+zonas cerca y sus uvas más lejos, cada una del lado de sus zonas; una zona
+con sus uvas cerca y sus bodegas más lejos. Cada punto va a su distancia
+(lo que tiene más vinos, más cerca) con un azar suave que sale de su
+nombre, así que la nube de un país es siempre la misma. Al quitar la elección, cada punto vuelve a
+su sitio.
+Países, zonas, bodegas y uvas, unidos por hilos y colocados en 3D por fuerzas, en el navegador, con lo que haya
 en la carta (unas décimas de segundo; se guarda en `localStorage` con una
 firma de la carta y se rehace sola cuando cambia). Pinchar un punto pone
 el filtro correspondiente (uva, bodega, zona o país) y la lista responde;
 los filtros atenúan lo que no encaja; pasar por un vino de la lista
-enciende su camino (bodega, zona, país, uvas); abrir una ficha gira la red
+enciende su camino (bodega, zona, país, uvas, que salen aunque no se
+vieran); abrir una ficha gira la red
 hasta su bodega. Arrastrar gira, la rueda acerca, el botón ↻ apaga el
 movimiento (y con `prefers-reduced-motion` no arranca). Los colores: cada
 punto lleva el del tipo de vino que más hace, las uvas el de su piel
@@ -175,6 +212,11 @@ Se eligen en Ajustes y se puede cambiar cuando se quiera.
   decide el propio bloque, con `body:has(.cv-explorador[data-diseno=mundo])`,
   sin que el plugin toque el `body`): basta con darle esa clase al
   contenedor del hero en Elementor. En móvil se apila: título, globo y lista.
+  La escena mide la cabecera de la web (desde la 0.8.1): si se superpone a
+  la página, como la de El Churra, el diseño es este; si ocupa su sitio,
+  la escena empieza debajo y llena el resto de la pantalla; y si el bloque
+  no está arriba del todo o debajo de la cabecera queda poca pantalla
+  (menos de 520 px), es un bloque más y la página se desplaza.
 - **Columnas.** Debajo del hero de foto de la página: el globo a la
   izquierda, clavado mientras se baja por la lista, y la lista a la
   derecha. El título lo pone el hero, así que el plugin no pinta ninguno.
@@ -240,6 +282,12 @@ node pruebas/probar-web.js                                    # Chromium, Firefo
 node pruebas/red.js                                           # la red, de día y de noche
 node pruebas/corazones.js                                     # la cifra, «Más guardados» y los avisos
 node pruebas/toques.js                                        # Tres toques: pasos, Kit, corazones, junto al explorador
+node pruebas/cabeceras.js                                     # «el mundo» con siete cabeceras (y El Churra contra la 0.8.0, en el 8766)
+node pruebas/kit.js                                           # colores y letra del Kit: Pura Cepa y El Churra
+node pruebas/red-raiz.js                                      # la red arranca con países y zonas, y los anillos (el laboratorio, en el 8767)
+node pruebas/filtro-pais.js                                   # el campo País y la Zona que lo espera, en las tres pieles
+node pruebas/puntos.js                                        # los puntos de El Churra: en la lista y la ficha, y en ninguna otra web
+sh pruebas/red-raiz-puracepa.sh                               # lo mismo con la carta de Pura Cepa
 ```
 
 `simular.php` llama al de `caracool-bodega/pruebas/`, que carga los dos
@@ -274,11 +322,12 @@ debajo.
 
 1. **El tipo**: tinto, blanco, rosado y burbujas (champagne, cava y
    espumosos), y generosos y dulces u otros si la carta los tiene.
-2. **Hasta cuánto**, por los tramos del widget (40, 70 y 150 € de
-   fábrica). Sin precios en Ajustes, esta pregunta no sale.
-3. **De aquí o de fuera**: las zonas que van delante en Ajustes, el resto
+2. **De aquí o de fuera**: las zonas que van delante en Ajustes, el resto
    de su país o fuera. `aqui` es cómo se llama la primera («De aquí» si no
    se dice).
+3. **Hasta cuánto**, por los tramos del widget (40, 70 y 150 € de
+   fábrica). Va la última desde la 0.8.3. Sin precios en Ajustes, esta
+   pregunta no sale.
 
 Cada opción lleva cuántos vinos quedan y las que dejarían la lista vacía
 salen apagadas. Arriba van los cuatro más guardados por la gente, si hay

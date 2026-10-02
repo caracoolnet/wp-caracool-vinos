@@ -1,5 +1,172 @@
 # Cambios
 
+## 0.8.5 · 2 de octubre de 2026
+
+- En una web sin el punto de El Churra (Pura Cepa), la ficha de un vino
+  seguía llevando puntos: el aro que se rellena en los botones «Los otros…
+  de…» y el punto de «Volver a la lista». Ahora los tres puntos van con el
+  mismo interruptor de Bodega que el de la lista. Sin punto, los botones de
+  la ficha quedan centrados.
+- Prueba nueva: `pruebas/puntos.js` abre la lista y la ficha y cuenta los
+  puntos que se ven, en El Churra (tienen que estar) y en Pura Cepa (ninguno).
+
+## 0.8.4 · 2 de octubre de 2026
+
+- En la lista, un vino sin uva empezaba su segunda línea por « · » antes
+  de la bodega («· Bodega Doña Paca»). Ahora el punto medio solo va entre
+  la uva y la bodega cuando están las dos. Se veía en Pura Cepa, que tiene
+  vinos sin uva conocida; con un filtro de uva no salía porque esos vinos
+  quedaban fuera.
+
+## 0.8.3 · 1 de octubre de 2026
+
+- **La red se abre en una nube, no en un círculo.** Los anillos de la 0.8.2
+  quedaban demasiado ordenados. Ahora, al pinchar un país, sus zonas quedan
+  cerca y sus uvas más lejos, pero cada punto a su propia distancia (lo que
+  tiene más vinos, más cerca) y con el ángulo algo movido, y el conjunto es
+  algo más ancho que alto para aprovechar el hueco libre. Sigue habiendo un
+  orden de fondo: cada uva va del lado de sus zonas y unas pasadas los
+  separan para que nada se pise. El azar sale del nombre de cada punto, así
+  que un país se abre siempre igual y no da saltos al volver a pincharlo.
+  La nube tampoco se mete ya debajo de una cabecera fija que tape la parte
+  de arriba del lienzo (la de El Churra).
+- **En «Ayúdame a elegir», el precio va el último.** Las preguntas son
+  ahora el tipo, de aquí o de fuera y hasta cuánto. Vale igual para el
+  bloque suelto de Tres toques, que es el mismo.
+
+## 0.8.2 · 1 de octubre de 2026
+
+Lo que salió revisando la 0.8.1 con la carta de Pura Cepa.
+
+- **La red se abre en anillos.** Al pinchar un país, cada zona se quedaba
+  donde la había dejado el cálculo de toda la red, y las uvas que el país
+  comparte con otros tiraban de ellas hacia un lado: en Pura Cepa, al
+  pinchar España, 64 de sus 77 puntos caían a la izquierda, unos encima de
+  otros. Ahora lo del elegido se abre a su alrededor. Un país: sus zonas en
+  un anillo y sus uvas en otro por fuera, cada uva al lado de sus zonas para
+  que los hilos se crucen poco. Una zona: sus uvas dentro y sus bodegas
+  fuera. El orden de cada anillo sale de dónde estaba cada punto, así que
+  ninguno cruza la pantalla para llegar; entra con una animación corta, el
+  resto de la red se apaga más, el anillo sigue al elegido si se gira la
+  red y, al quitar la elección, cada punto vuelve a su sitio. Si el anillo
+  no cabe donde está el elegido (cerca del panel), se aparta lo justo. Con
+  movimiento reducido, sin animación.
+- **Filtro de país.** Con vinos de más de un país, los filtros llevan un
+  campo «País» delante de «Zona», y Zona espera apagada («Elige antes un
+  país») hasta que se elige uno; entonces solo lleva las zonas de ese país
+  (antes salían las de todos, más de cien en Pura Cepa). Cambiar de país
+  quita la zona si era de otro y quitar el país quita también la zona. Una
+  zona que llega por otro camino (el globo, la red, la ficha de un vino)
+  pone su país en el campo. Pinchar un país en el mapa o en la red también
+  lo rellena, y el chip suelto de país ya no sale porque tiene su campo.
+  Con un solo país en la carta, no hay campo y Zona va como siempre. Seis
+  campos caben en una fila cuando el panel es ancho; si no, van en dos
+  filas de tres.
+- **En el móvil, los filtros ya no se montan encima de la lista.** Con una
+  cabecera fija (la de El Churra), en los modos Mapa y Red los filtros
+  bajaban el alto de la cabecera (126 px) por encima de los primeros vinos.
+  Venía de antes.
+- Pruebas nuevas: `pruebas/filtro-pais.js` (las tres pieles, escritorio y
+  móvil, El Churra y Pura Cepa) y `pruebas/foco.js` (cómo queda la red con
+  un país o una zona elegidos); `pruebas/red-raiz.js` comprueba ahora que
+  los anillos se reparten por los cuatro lados y no quedan bajo el panel.
+  `pruebas/gancho.sh` monta la copia del plugin con el gancho de pruebas.
+
+## 0.8.1 · 1 de octubre de 2026
+
+Lo que salió al instalar Vinos en la web de Pura Cepa: el explorador estaba
+hecho a la medida de El Churra. Ahora se adapta solo a cada web, sin tocar
+nada en ninguna. En El Churra se ve igual que en la 0.8.0 (comprobado
+medida a medida contra la 0.8.0).
+
+- **«El mundo» encaja con cualquier cabecera.** El diseño daba por hecho
+  una cabecera fija que se superpone a la página, como la de El Churra. Con
+  una cabecera normal, que ocupa su sitio (la de Pura Cepa, 171 px), el
+  título y la primera fila de filtros quedaban tapados. El bloque mide
+  ahora la cabecera de la web al cargar y cuando cambia de alto: si se
+  superpone, el diseño es el de siempre; si ocupa su sitio, la escena
+  empieza debajo de ella y llena el resto de la pantalla, con márgenes de
+  página. Si el explorador no está arriba del todo (hay otra sección antes)
+  o queda muy poca pantalla debajo de la cabecera (menos de 520 px), pasa a
+  ser un bloque más de la página: no se fija y la página se desplaza como
+  siempre. Probado con siete tipos de cabecera (fija superpuesta, normal,
+  pegajosa, absoluta, ninguna, con una sección antes y con la barra de
+  administración) en escritorio, portátil, portátil bajo y móvil.
+- **Los colores salen del Kit de cada web.** La hoja cogía colores con
+  nombre que solo existen en el Kit de El Churra, así que en otra web el
+  mapa salía con los colores de El Churra. Si el Kit no es el de El Churra,
+  el plugin toma el color más claro (el fondo de día y el texto de noche),
+  el más oscuro (la tinta de día y el fondo de noche) y el más vivo (el
+  acento), sin contar los translúcidos, y saca de ellos la tierra del
+  globo, los países con vinos y los filetes. En Pura Cepa: #F7F7F7,
+  #04070C y #DCA26B. En Ajustes, la tarjeta «Colores y letra» deja elegir
+  cualquiera de los tres entre los colores del Kit, o dejarlo en
+  Automático.
+- **La letra también.** La familia ya era la del Kit, pero los títulos iban
+  siempre en cursiva a peso 500 y el texto a peso 300, que es como se
+  dibuja El Churra. Con otro Kit, la cursiva y los pesos son los de su
+  tipografía Principal (los títulos) y la de Texto (el resto). En Pura
+  Cepa: Playfair Display recta a 400 y Source Sans Pro a 400. Las letras
+  que el mapa y la red pintan en el lienzo siguen la misma regla. Ajustes
+  tiene un desplegable para forzar la de la web o la de El Churra.
+- **La red arranca con países y zonas.** Con todos los puntos a la vez (en
+  Pura Cepa, 704) abrumaba. Ahora al entrar solo se ven los países y las
+  zonas; al pinchar un país salen sus uvas, al pinchar una zona sus uvas y
+  sus bodegas, y al pasar por un vino de la lista (o abrir su ficha) sale
+  su camino. Entran con un fundido corto; lo que no se ve no se puede
+  pinchar. Al pasar por un país o una zona, la nota dice qué sale si se
+  pincha.
+- **El punto delante de cada vino es de El Churra.** El aro que se rellena
+  al pasar por un vino de la lista lo decide Caracool en Bodega (pestaña
+  Diseño, Bodega 0.4.1). Si Bodega no dice nada, sale solo con el Kit de
+  El Churra; sin punto, el vino va pegado a la izquierda y lo que marca la
+  fila al pasar es su fondo.
+- Pruebas nuevas: `pruebas/cabeceras.js` (las cabeceras), `pruebas/kit.js`
+  (colores y letra en el navegador) y `pruebas/red-raiz.js` (la red; con
+  `pruebas/red-raiz-puracepa.sh`, la carta de Pura Cepa).
+
+## 0.8.0 · 1 de octubre de 2026
+
+- **El mapa solo se descarga cuando hay un mapa.** El mundo (37 KB
+  comprimidos) y, justo detrás, el detalle de los países (63 KB, antes 83)
+  llegan al abrir el modo Mapa. Si la web abre en Lista, el visitante ya
+  había elegido Lista, o Bodega no da Mapa, no se baja ninguno de los dos:
+  el plugin pasa de 187 KB a 71 KB. La lista tampoco espera a la
+  geometría; sale en cuanto carga el script. Las librerías de dibujo (d3 y
+  topojson, 21 KB) siguen cargándose con el explorador.
+- **El globo ya no gasta CPU cuando no se ve.** El giro lento repintaba los
+  177 países 60 veces por segundo en cualquier modo, también con el globo
+  oculto en Lista o en Red: unos 1000 ms de CPU por segundo con la página
+  quieta en un móvil lento. Ahora solo gira en modo Mapa, con la pestaña
+  visible y el globo en pantalla, y se para con «Ayúdame a elegir» abierto.
+  Gira a la misma velocidad (2° por segundo) pero repinta unas 12 veces por
+  segundo como mucho, y espera más si el dispositivo tarda en pintar. Los
+  países del otro lado del globo ya no se calculan (no cambia ni un píxel,
+  comprobado en diez giros). En Lista el gasto en reposo pasa de ~1000 a
+  ~1 ms por segundo; en Mapa, de ~1000 a ~260 en un móvil lento (CPU x4) y
+  de ~800 a ~220 en escritorio.
+- **La lista no se reconstruye al filtrar.** Cada vino tiene una sola fila,
+  que se hace la primera vez que sale y se reutiliza: buscar o filtrar solo
+  cambia cuáles se cuelgan y en qué orden. Las filas que están fuera de la
+  pantalla tampoco se calculan (`content-visibility: auto`; la fila con el
+  foco se pinta entera para no recortar el anillo). Buscar o vaciar el
+  buscador pasa de 0,6 a 1,2 s a 0,1 a 0,3 s en un móvil lento. En un
+  navegador sin `content-visibility` (Firefox anterior a la 125, Safari
+  anterior a la 18) la lista se ve igual y solo pierde esa parte de la
+  mejora.
+- **Acercarse a un país ya no depende del mapa.** El acercamiento de cada
+  país está calculado de antemano (`ZOOM_PAIS`, con `labs/vinos/zooms-pais.js`),
+  así que elegir un vino en la Lista deja el globo bien encuadrado aunque
+  el mapa todavía no se haya bajado.
+- **Detalle de los países a dos decimales.** `finos-50m.json` pasa de 83 a
+  63 KB comprimidos. Comparado a máximo zoom en seis zonas (Rías Baixas,
+  Murcia, Toscana, Priorat, Beaune, Canarias), el trazo coincide salvo
+  medio píxel en el borde.
+- Pruebas: `pruebas/geometria.js` comprueba que Lista y Red no bajan
+  geometría, que el mapa se pinta al abrirlo, que un fallo de red no rompe
+  nada y se reintenta, y que el giro se para fuera de Mapa, con la pestaña
+  oculta y con la capa de «Ayúdame a elegir» abierta.
+
 ## 0.7.3 · 1 de octubre de 2026
 
 - **Las demás páginas de la web no leen ni cargan nada de Vinos.** Hasta

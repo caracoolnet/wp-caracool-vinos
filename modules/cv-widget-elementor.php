@@ -173,7 +173,7 @@ class Caracool_Vinos_Widget extends \Elementor\Widget_Base {
 			'nota_elegir',
 			array(
 				'type'            => Controls_Manager::RAW_HTML,
-				'raw'             => 'Un botón junto a «Mis vinos» que abre «Tres toques» encima del explorador: tres preguntas (el tipo, hasta cuánto y de aquí o de fuera) y salen cuatro vinos, con el resto debajo; cada uno lleva a su ficha en el mapa. Con <b>#elegir</b> al final de la dirección, la página se abre ya con las preguntas (sirve para enlazarlo desde la portada o la carta).<br><br>'
+				'raw'             => 'Un botón junto a «Mis vinos» que abre «Tres toques» encima del explorador: tres preguntas (el tipo, de aquí o de fuera y hasta cuánto) y salen cuatro vinos, con el resto debajo; cada uno lleva a su ficha en el mapa. Con <b>#elegir</b> al final de la dirección, la página se abre ya con las preguntas (sirve para enlazarlo desde la portada o la carta).<br><br>'
 					. ( $tiene ? 'Esta web tiene «Tres toques».' : '<b>Esta web no tiene «Tres toques»</b>: lo da Caracool desde Bodega. Mientras no lo tenga, el botón no sale.' ),
 				'content_classes' => 'elementor-descriptor',
 			)

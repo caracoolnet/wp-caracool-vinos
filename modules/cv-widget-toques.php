@@ -79,7 +79,7 @@ class Caracool_Vinos_Widget_Toques extends \Elementor\Widget_Base {
 			'nota',
 			array(
 				'type'            => Controls_Manager::RAW_HTML,
-				'raw'             => 'Tres preguntas (el tipo, hasta cuánto y de aquí o de fuera) y salen cuatro vinos en grande, con el resto debajo. Los vinos salen de la carta publicada en <b>Caracool → Vinos</b>; los precios y «Mis vinos» se ven si allí están encendidos. Sin precios, la pregunta del precio no sale.',
+				'raw'             => 'Tres preguntas (el tipo, de aquí o de fuera y hasta cuánto) y salen cuatro vinos en grande, con el resto debajo. Los vinos salen de la carta publicada en <b>Caracool → Vinos</b>; los precios y «Mis vinos» se ven si allí están encendidos. Sin precios, la pregunta del precio no sale.',
 				'content_classes' => 'elementor-descriptor',
 			)
 		);

@@ -140,6 +140,320 @@ class Caracool_Vinos_Explorador {
 		return $t;
 	}
 
+	// ── La paleta de la web ─────────────────────────────────────────────
+
+	/**
+	 * Los colores del Kit de Elementor (los del sistema y los propios), sin
+	 * los translúcidos: [ [ 'id' =>, 'titulo' =>, 'rgb' => [r, g, b] ], … ].
+	 * Vacío sin Elementor.
+	 */
+	public static function colores_kit() {
+		if ( ! class_exists( 'Elementor\Plugin' ) || empty( \Elementor\Plugin::$instance ) || empty( \Elementor\Plugin::$instance->kits_manager ) ) {
+			return array();
+		}
+		$km    = \Elementor\Plugin::$instance->kits_manager;
+		$lista = array();
+		foreach ( array( 'system_colors', 'custom_colors' ) as $clave ) {
+			$v = null;
+			if ( method_exists( $km, 'get_current_settings' ) ) {
+				$v = $km->get_current_settings( $clave );
+			} elseif ( method_exists( $km, 'get_active_kit_for_frontend' ) ) {
+				$kit = $km->get_active_kit_for_frontend();
+				$v   = $kit ? $kit->get_settings( $clave ) : null;
+			}
+			if ( ! is_array( $v ) ) {
+				continue;
+			}
+			foreach ( $v as $c ) {
+				if ( ! is_array( $c ) || empty( $c['color'] ) || ! is_string( $c['color'] ) ) {
+					continue;
+				}
+				$rgb = self::rgb_de( $c['color'] );
+				if ( ! $rgb ) {
+					continue;
+				}
+				$lista[] = array(
+					'id'     => isset( $c['_id'] ) ? (string) $c['_id'] : '',
+					'titulo' => isset( $c['title'] ) ? wp_strip_all_tags( (string) $c['title'] ) : '',
+					'rgb'    => $rgb,
+				);
+			}
+		}
+		return $lista;
+	}
+
+	/** Un color en #rgb, #rrggbb o rgb(): [r, g, b]. Null si no es un color o si es translúcido. */
+	public static function rgb_de( $t ) {
+		$t = strtolower( trim( (string) $t ) );
+		if ( preg_match( '/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/', $t, $m ) ) {
+			$h = $m[1];
+			if ( strlen( $h ) <= 4 ) {
+				$h = preg_replace( '/(.)/', '$1$1', $h );
+			}
+			if ( 8 === strlen( $h ) && hexdec( substr( $h, 6, 2 ) ) < 250 ) {
+				return null;
+			}
+			return array( hexdec( substr( $h, 0, 2 ) ), hexdec( substr( $h, 2, 2 ) ), hexdec( substr( $h, 4, 2 ) ) );
+		}
+		if ( preg_match( '/^rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})\s*(?:[,\/]\s*([0-9.]+%?)\s*)?\)$/', $t, $m ) ) {
+			if ( isset( $m[4] ) && '' !== $m[4] ) {
+				$alfa = '%' === substr( $m[4], -1 ) ? (float) $m[4] / 100 : (float) $m[4];
+				if ( $alfa < 0.98 ) {
+					return null;
+				}
+			}
+			return array( min( 255, (int) $m[1] ), min( 255, (int) $m[2] ), min( 255, (int) $m[3] ) );
+		}
+		return null;
+	}
+
+	/** La luminosidad relativa de un color (la de WCAG, de 0 a 1). */
+	private static function luz( $rgb ) {
+		$f = function ( $c ) {
+			$c = $c / 255;
+			return $c <= 0.03928 ? $c / 12.92 : pow( ( $c + 0.055 ) / 1.055, 2.4 );
+		};
+		return 0.2126 * $f( $rgb[0] ) + 0.7152 * $f( $rgb[1] ) + 0.0722 * $f( $rgb[2] );
+	}
+
+	/** El contraste entre dos colores (de 1 a 21). */
+	private static function contraste( $a, $b ) {
+		$la = self::luz( $a );
+		$lb = self::luz( $b );
+		return ( max( $la, $lb ) + 0.05 ) / ( min( $la, $lb ) + 0.05 );
+	}
+
+	/** $a con una parte $p (de 0 a 1) de $b. */
+	private static function mezcla( $a, $b, $p ) {
+		return array(
+			(int) round( $a[0] + ( $b[0] - $a[0] ) * $p ),
+			(int) round( $a[1] + ( $b[1] - $a[1] ) * $p ),
+			(int) round( $a[2] + ( $b[2] - $a[2] ) * $p ),
+		);
+	}
+
+	private static function hex( $rgb ) {
+		return sprintf( '#%02x%02x%02x', $rgb[0], $rgb[1], $rgb[2] );
+	}
+
+	/** Cuánto color tiene un color (de 0, un gris, a 1) y a qué altura de claridad. */
+	private static function viveza( $rgb ) {
+		$mx = max( $rgb ) / 255;
+		$mn = min( $rgb ) / 255;
+		$l  = ( $mx + $mn ) / 2;
+		if ( $mx === $mn ) {
+			return array( 0, $l );
+		}
+		$s = ( $mx - $mn ) / ( 1 - abs( 2 * $l - 1 ) );
+		return array( $s * ( 1 - abs( 2 * $l - 1 ) ), $l );
+	}
+
+	/**
+	 * La paleta de esta web, sacada del Kit: el color más claro (el fondo de
+	 * día y el texto de noche), el más oscuro (la tinta de día y el fondo de
+	 * noche) y un acento (el más vivo). Los tonos de en medio (la tierra del
+	 * globo, los países con vinos, los filetes) son mezclas de esos tres, así
+	 * el mapa sale con los colores de la web y no con los de otra.
+	 *
+	 * Vacía (vale lo de la casa de siempre) si el Kit ya lleva los tonos con
+	 * nombre de El Churra, si no hay Kit o si el Kit no da dos colores con
+	 * contraste suficiente. Ajustes puede fijar uno de los tres.
+	 *
+	 * @return array nombre de la variable (sin «--cv-k-») => valor.
+	 */
+	public static function paleta() {
+		$a      = Caracool_Vinos::ajustes();
+		$manual = array();
+		foreach ( array( 'claro', 'oscuro', 'acento' ) as $k ) {
+			$m             = isset( $a[ 'color_' . $k ] ) ? $a[ 'color_' . $k ] : 'auto';
+			$manual[ $k ] = ( 'auto' === $m ) ? null : self::rgb_de( $m );
+		}
+		$kit  = self::colores_kit();
+		$casa = false;
+		foreach ( $kit as $c ) {
+			if ( 'cremaclara' === $c['id'] ) {
+				$casa = true;
+			}
+		}
+		if ( $casa && ! array_filter( $manual ) ) {
+			return array();
+		}
+		$claro  = $manual['claro'];
+		$oscuro = $manual['oscuro'];
+		foreach ( $kit as $c ) {
+			if ( ! $claro || self::luz( $c['rgb'] ) > self::luz( $claro ) ) {
+				if ( ! $manual['claro'] ) {
+					$claro = $c['rgb'];
+				}
+			}
+			if ( ! $oscuro || self::luz( $c['rgb'] ) < self::luz( $oscuro ) ) {
+				if ( ! $manual['oscuro'] ) {
+					$oscuro = $c['rgb'];
+				}
+			}
+		}
+		if ( ! $claro || ! $oscuro ) {
+			return array();
+		}
+		if ( ! ( $manual['claro'] && $manual['oscuro'] ) && self::contraste( $claro, $oscuro ) < 4.5 ) {
+			return array();
+		}
+		$acento = $manual['acento'];
+		if ( ! $acento ) {
+			$mejor = 0.05;
+			foreach ( $kit as $c ) {
+				list( $v, $l ) = self::viveza( $c['rgb'] );
+				if ( $l < 0.2 || $l > 0.85 || $c['rgb'] === $claro || $c['rgb'] === $oscuro ) {
+					continue;
+				}
+				if ( $v > $mejor ) {
+					$mejor  = $v;
+					$acento = $c['rgb'];
+				}
+			}
+		}
+		if ( ! $acento ) {
+			// un Kit sin color vivo (todo grises): el acento es la tinta, un poco aclarada
+			$acento = self::mezcla( $oscuro, $claro, 0.3 );
+		}
+		return array(
+			'tinta'        => self::hex( $oscuro ),
+			'crema'        => self::hex( $claro ),
+			'crema2'       => self::hex( self::mezcla( $claro, $oscuro, 0.06 ) ),
+			'arena'        => self::hex( self::mezcla( $claro, $acento, 0.22 ) ),
+			'texto'        => self::hex( self::mezcla( $oscuro, $claro, 0.22 ) ),
+			'borde'        => self::hex( self::mezcla( $claro, $oscuro, 0.16 ) ),
+			'rojo'         => self::hex( self::mezcla( $acento, $oscuro, 0.2 ) ),
+			'ocre'         => self::hex( self::mezcla( $acento, $oscuro, 0.45 ) ),
+			'naranja'      => self::hex( $acento ),
+			'noche-fondo'  => self::hex( $oscuro ),
+			'noche-papel'  => self::hex( self::mezcla( $oscuro, $claro, 0.05 ) ),
+			'noche-texto'  => self::hex( $claro ),
+			'noche-suave'  => self::hex( self::mezcla( $claro, $oscuro, 0.32 ) ),
+			'noche-borde'  => 'rgba(' . $claro[0] . ',' . $claro[1] . ',' . $claro[2] . ',.14)',
+			'noche-arena'  => self::hex( self::mezcla( $oscuro, $claro, 0.12 ) ),
+			'noche-acento' => self::hex( $acento ),
+		);
+	}
+
+	/** La paleta y la letra de la web, como la hoja que las pone en el bloque. Vacía si manda lo de la casa. */
+	public static function kit_css() {
+		$d = '';
+		foreach ( array_merge( self::paleta(), self::letra() ) as $k => $v ) {
+			$d .= '--cv-k-' . $k . ':' . $v . ';';
+		}
+		// (valores calculados aquí: #rrggbb, rgba con números, normal|italic y un peso de tres cifras)
+		return '' === $d ? '' : '<style>.cv-explorador{' . $d . '}</style>';
+	}
+
+	/** Lo que se está usando, en una frase, para el panel de Ajustes. */
+	public static function paleta_texto() {
+		$p = self::paleta();
+		if ( ! $p ) {
+			return 'En esta web van los colores de la casa (el Kit lleva los tonos con nombre de El Churra, o no tiene dos colores con contraste suficiente).';
+		}
+		return 'Ahora: fondo de día ' . $p['crema'] . ', tinta y fondo de noche ' . $p['tinta'] . ', acento ' . $p['naranja'] . '. La tierra del globo, los países con vinos y los filetes son mezclas de esos tres.';
+	}
+
+	// ── La letra de la web ──────────────────────────────────────────────
+
+	/** Un ajuste del Kit de Elementor, o null sin Elementor o sin Kit. */
+	private static function kit_ajuste( $clave ) {
+		if ( ! class_exists( 'Elementor\Plugin' ) || empty( \Elementor\Plugin::$instance ) || empty( \Elementor\Plugin::$instance->kits_manager ) ) {
+			return null;
+		}
+		$km = \Elementor\Plugin::$instance->kits_manager;
+		if ( method_exists( $km, 'get_current_settings' ) ) {
+			return $km->get_current_settings( $clave );
+		}
+		if ( method_exists( $km, 'get_active_kit_for_frontend' ) ) {
+			$kit = $km->get_active_kit_for_frontend();
+			return $kit ? $kit->get_settings( $clave ) : null;
+		}
+		return null;
+	}
+
+	/** El Kit de El Churra: el que lleva el color con nombre «cremaclara». */
+	public static function kit_de_la_casa() {
+		foreach ( self::colores_kit() as $c ) {
+			if ( 'cremaclara' === $c['id'] ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Un peso del Kit (400, 600, normal, bold) como número de tres cifras, o ''. */
+	private static function peso_de( $v ) {
+		$v = strtolower( trim( (string) $v ) );
+		if ( 'normal' === $v ) {
+			return '400';
+		}
+		if ( 'bold' === $v ) {
+			return '700';
+		}
+		return preg_match( '/^[1-9]00$/', $v ) ? $v : '';
+	}
+
+	/** Las tipografías del sistema del Kit por id (primary, secondary, text, accent). */
+	private static function tipografias_kit() {
+		$lista = self::kit_ajuste( 'system_typography' );
+		$por   = array();
+		if ( is_array( $lista ) ) {
+			foreach ( $lista as $t ) {
+				if ( is_array( $t ) && ! empty( $t['_id'] ) ) {
+					$por[ (string) $t['_id'] ] = $t;
+				}
+			}
+		}
+		return $por;
+	}
+
+	/**
+	 * La forma de la letra de la web. Las familias ya salen del Kit
+	 * (--e-global-typography-*), pero los títulos de El Churra van en
+	 * cursiva a peso 500 y el texto a peso 300, y la letra de otra web puede
+	 * ser recta y a 400: con otra letra que la de la casa, cursiva y pesos
+	 * son los que diga el Kit (los títulos, los de «Principal»; el texto,
+	 * los de «Texto»). Vacío (vale lo de la casa, sin tocar nada) si el Kit
+	 * es el de El Churra, si no hay Kit o si Ajustes dice «La de El Churra».
+	 *
+	 * @return array nombre de la variable (sin «--cv-k-») => valor.
+	 */
+	public static function letra() {
+		$a    = Caracool_Vinos::ajustes();
+		$modo = isset( $a['letra'] ) ? $a['letra'] : 'auto';
+		if ( 'casa' === $modo || ( 'auto' === $modo && self::kit_de_la_casa() ) ) {
+			return array();
+		}
+		$por    = self::tipografias_kit();
+		$titulo = isset( $por['primary'] ) ? $por['primary'] : array();
+		$texto  = isset( $por['text'] ) ? $por['text'] : array();
+		if ( ! $titulo && ! $texto ) {
+			return array();
+		}
+		$estilo = isset( $titulo['typography_font_style'] ) ? strtolower( (string) $titulo['typography_font_style'] ) : '';
+		$p_tit  = self::peso_de( isset( $titulo['typography_font_weight'] ) ? $titulo['typography_font_weight'] : '' );
+		$p_tex  = self::peso_de( isset( $texto['typography_font_weight'] ) ? $texto['typography_font_weight'] : '' );
+		return array(
+			'didona-estilo' => in_array( $estilo, array( 'italic', 'oblique' ), true ) ? 'italic' : 'normal',
+			'didona-peso'   => '' !== $p_tit ? $p_tit : '400',
+			'peso-fino'     => '' !== $p_tex ? $p_tex : '400',
+		);
+	}
+
+	/** Lo que se está usando, en una frase, para el panel de Ajustes. */
+	public static function letra_texto() {
+		$l = self::letra();
+		if ( ! $l ) {
+			return 'En esta web va la letra de la casa: títulos en cursiva y texto ligero, con las familias del Kit.';
+		}
+		$por   = self::tipografias_kit();
+		$f_tit = isset( $por['primary']['typography_font_family'] ) ? wp_strip_all_tags( (string) $por['primary']['typography_font_family'] ) : '';
+		$f_tex = isset( $por['text']['typography_font_family'] ) ? wp_strip_all_tags( (string) $por['text']['typography_font_family'] ) : '';
+		return 'Ahora: títulos en ' . ( '' !== $f_tit ? $f_tit . ' ' : '' ) . ( 'italic' === $l['didona-estilo'] ? 'cursiva' : 'recta' ) . ' a peso ' . $l['didona-peso'] . ' y texto' . ( '' !== $f_tex ? ' en ' . $f_tex : '' ) . ' a peso ' . $l['peso-fino'] . ', como dice el Kit.';
+	}
+
 	// ── Lo que manda ────────────────────────────────────────────────────
 
 	/**
@@ -148,7 +462,9 @@ class Caracool_Vinos_Explorador {
 	 * la carta. Las vistas, Bodega las da y la web las enciende o las apaga
 	 * en Ajustes; el widget o el shortcode pueden apagarlas en una página, o
 	 * encender una que Bodega dé, nunca una que no dé. Lista va siempre. La
-	 * escena y el sol y la luna son de la web. Si Bodega todavía no ha dicho
+	 * escena y el sol y la luna son de la web. El punto delante de cada vino
+	 * también lo decide Bodega; si no dice nada, sale solo con el Kit de El
+	 * Churra (es suyo). Si Bodega todavía no ha dicho
 	 * nada (una web que no ha recibido nada desde la 0.5.7), manda lo de
 	 * Ajustes, como antes.
 	 *   [caracool_vinos escena="noche" mapa="no" red="si" dianoche="no"]
@@ -168,6 +484,9 @@ class Caracool_Vinos_Explorador {
 			'esquinas'  => $b ? $b['esquinas'] : ( isset( $atts['esquinas'] ) && in_array( $atts['esquinas'], array( 'web', 'diseno' ), true ) ? $atts['esquinas'] : ( 'diseno' === $a['esquinas'] ? 'diseno' : 'web' ) ),
 			'mapa_dado' => $b ? $b['mapa'] : true,
 			'red_dada'  => $b ? $b['red'] : true,
+			// el punto delante de cada vino: lo que diga Bodega; si no dice nada, solo con el Kit de El Churra
+			'punto'     => ( $b && null !== $b['punto'] ) ? ( 'si' === $b['punto'] ) : self::kit_de_la_casa(),
+			'punto_dado' => $b && null !== $b['punto'],
 			'escena'    => isset( $atts['escena'] ) && in_array( $atts['escena'], array( 'dia', 'noche' ), true ) ? $atts['escena'] : ( 'noche' === $a['escena'] ? 'noche' : 'dia' ),
 			'dianoche'  => $si( 'dianoche', $a['dianoche'] ),
 		);
@@ -239,6 +558,7 @@ class Caracool_Vinos_Explorador {
 		$diseno     = $vista['diseno'];
 		$panel      = $vista['panel'];
 		$esquinas   = $vista['esquinas'];
+		$punto      = $vista['punto'];
 		$mapa       = $vista['mapa'];
 		$red        = $vista['red'];
 		$modo       = $vista['modo'];
@@ -253,6 +573,7 @@ class Caracool_Vinos_Explorador {
 				$estilo = '<style>.cv-explorador[data-esquinas=web]{' . $v . '}</style>';
 			}
 		}
+		$estilo    = self::kit_css() . $estilo;
 		$precios    = 'si' === $a['precios'];
 		$datos      = self::datos( $carta, $toques_cfg );
 		$rotulo     = $a['rotulo'];

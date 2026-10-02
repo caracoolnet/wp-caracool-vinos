@@ -55,6 +55,10 @@ class Caracool_Vinos_Ajustes {
 				'mapa'        => 'si',
 				'panel'       => 'mosaico',
 				'esquinas'    => 'web',
+				'color_claro'  => 'auto',
+				'color_oscuro' => 'auto',
+				'color_acento' => 'auto',
+				'letra'        => 'auto',
 				'red'         => 'si',
 				'rotulo'      => 'Carta de vinos',
 				'titulo'      => 'Explorar los vinos',
@@ -83,6 +87,12 @@ class Caracool_Vinos_Ajustes {
 		$limpio['diseno'] = isset( $bruto['diseno'] ) ? ( 'columnas' === $bruto['diseno'] ? 'columnas' : 'mundo' ) : $antes['diseno'];
 		$limpio['escena'] = ( isset( $bruto['escena'] ) && 'noche' === $bruto['escena'] ) ? 'noche' : 'dia';
 		$limpio['panel']    = isset( $bruto['panel'] ) ? ( in_array( $bruto['panel'], self::pieles(), true ) ? $bruto['panel'] : 'mosaico' ) : $antes['panel'];
+		foreach ( array( 'color_claro', 'color_oscuro', 'color_acento' ) as $k ) {
+			$v          = isset( $bruto[ $k ] ) ? strtolower( trim( (string) $bruto[ $k ] ) ) : ( isset( $antes[ $k ] ) ? $antes[ $k ] : 'auto' );
+			$limpio[ $k ] = ( 'auto' === $v || preg_match( '/^#[0-9a-f]{6}$/', $v ) ) ? $v : 'auto';
+		}
+		$antes_letra      = isset( $antes['letra'] ) ? $antes['letra'] : 'auto';
+		$limpio['letra']  = isset( $bruto['letra'] ) ? ( in_array( $bruto['letra'], array( 'auto', 'casa', 'web' ), true ) ? $bruto['letra'] : 'auto' ) : $antes_letra;
 		$limpio['esquinas'] = isset( $bruto['esquinas'] ) ? ( 'diseno' === $bruto['esquinas'] ? 'diseno' : 'web' ) : $antes['esquinas'];
 		return $limpio;
 	}
@@ -142,7 +152,7 @@ class Caracool_Vinos_Ajustes {
 				<?php
 				$vista   = Caracool_Vinos_Explorador::vista();
 				$pieles  = array( 'mosaico' => 'Mosaico', 'pildoras' => 'Píldoras', 'ficha' => 'Ficha' );
-				$resumen = ( 'columnas' === $vista['diseno'] ? 'Columnas' : 'El mundo' ) . ' · panel ' . $pieles[ $vista['panel'] ] . ' · ' . ( 'web' === $vista['esquinas'] ? 'las esquinas de la web' : 'las esquinas de la piel' );
+				$resumen = ( 'columnas' === $vista['diseno'] ? 'Columnas' : 'El mundo' ) . ' · panel ' . $pieles[ $vista['panel'] ] . ' · ' . ( 'web' === $vista['esquinas'] ? 'las esquinas de la web' : 'las esquinas de la piel' ) . ' · ' . ( $vista['punto'] ? 'con el punto delante de cada vino' : 'sin punto delante de cada vino' );
 				?>
 				<div class="cc-campo">
 					<label>Lo decide Caracool</label>
@@ -217,6 +227,64 @@ class Caracool_Vinos_Ajustes {
 						<textarea id="cv-entradilla" name="cv[entradilla]" rows="2"><?php echo esc_textarea( $a['entradilla'] ); ?></textarea>
 					</div>
 				</div>
+			</div>
+
+			<div class="cc-card">
+				<div class="cc-card-head">
+					<span class="cc-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20 2 2 0 0 0 2-2c0-.6-.3-1.1-.6-1.5a2 2 0 0 1 1.5-3.4H17a5 5 0 0 0 5-5C22 6 17.5 2 12 2z"/></svg></span>
+					<h2>Colores y letra</h2>
+				</div>
+				<p class="cc-card-desc">El explorador saca su paleta de los colores del Kit de Elementor: el más claro es el fondo de día, el más oscuro es la tinta y el fondo de noche, y el acento es el más vivo. Los tonos del globo son mezclas de esos tres. En «Automático» no hay que hacer nada.</p>
+				<?php
+				$kit_colores = Caracool_Vinos_Explorador::colores_kit();
+				$vistos      = array();
+				$opciones    = array();
+				foreach ( $kit_colores as $c ) {
+					$h = sprintf( '#%02x%02x%02x', $c['rgb'][0], $c['rgb'][1], $c['rgb'][2] );
+					if ( isset( $vistos[ $h ] ) ) {
+						continue;
+					}
+					$vistos[ $h ] = true;
+					$opciones[ $h ] = ( '' !== $c['titulo'] ? $c['titulo'] . ' · ' : '' ) . $h;
+				}
+				$campos = array(
+					'color_claro'  => array( 'El más claro', 'El fondo de día y el texto de noche.' ),
+					'color_oscuro' => array( 'El más oscuro', 'La tinta de día y el fondo de noche.' ),
+					'color_acento' => array( 'Acento', 'El país elegido en el globo, los corazones y los botones de color.' ),
+				);
+				foreach ( $campos as $k => $c ) :
+					$actual = isset( $a[ $k ] ) ? $a[ $k ] : 'auto';
+					?>
+					<div class="cc-campo">
+						<label for="cv-<?php echo esc_attr( $k ); ?>"><?php echo esc_html( $c[0] ); ?></label>
+						<div>
+							<select id="cv-<?php echo esc_attr( $k ); ?>" name="cv[<?php echo esc_attr( $k ); ?>]">
+								<option value="auto" <?php selected( 'auto', $actual ); ?>>Automático</option>
+								<?php foreach ( $opciones as $h => $nombre ) : ?>
+									<option value="<?php echo esc_attr( $h ); ?>" <?php selected( $h, $actual ); ?>><?php echo esc_html( $nombre ); ?></option>
+								<?php endforeach; ?>
+								<?php if ( 'auto' !== $actual && ! isset( $opciones[ $actual ] ) ) : ?>
+									<option value="<?php echo esc_attr( $actual ); ?>" selected><?php echo esc_html( $actual ); ?></option>
+								<?php endif; ?>
+							</select>
+							<span class="cc-hint"><?php echo esc_html( $c[1] ); ?></span>
+						</div>
+					</div>
+				<?php endforeach; ?>
+				<p class="cc-hint"><?php echo esc_html( Caracool_Vinos_Explorador::paleta_texto() ); ?></p>
+				<?php $letra = isset( $a['letra'] ) ? $a['letra'] : 'auto'; ?>
+				<div class="cc-campo">
+					<label for="cv-letra">Letra</label>
+					<div>
+						<select id="cv-letra" name="cv[letra]">
+							<option value="auto" <?php selected( 'auto', $letra ); ?>>Automática</option>
+							<option value="web" <?php selected( 'web', $letra ); ?>>La de la web (cursiva y pesos del Kit)</option>
+							<option value="casa" <?php selected( 'casa', $letra ); ?>>La de El Churra (títulos en cursiva, texto ligero)</option>
+						</select>
+						<span class="cc-hint">La familia siempre es la del Kit. Esto decide la forma: si los títulos van en cursiva y qué grosor lleva el texto.</span>
+					</div>
+				</div>
+				<p class="cc-hint"><?php echo esc_html( Caracool_Vinos_Explorador::letra_texto() ); ?></p>
 			</div>
 
 			<div class="cc-card">

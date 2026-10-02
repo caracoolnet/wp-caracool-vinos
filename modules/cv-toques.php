@@ -2,8 +2,8 @@
 /**
  * Caracool Vinos — Tres toques
  * ─────────────────────────────────────────────────────────────────────
- * Un bloque aparte del explorador: tres preguntas (el tipo, hasta cuánto y
- * de aquí o de fuera) y salen cuatro vinos en grande, con el resto de los
+ * Un bloque aparte del explorador: tres preguntas (el tipo, de aquí o de
+ * fuera y hasta cuánto) y salen cuatro vinos en grande, con el resto de los
  * que encajan justo debajo. Se pone con el shortcode o con el widget de
  * Elementor «Tres toques»:
  *

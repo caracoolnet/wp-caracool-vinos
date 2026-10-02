@@ -11,6 +11,7 @@
  *   que da Bodega y enciende la web; Lista va siempre), $modo (con la que arranca),
  *   $panel ('mosaico' | 'pildoras' | 'ficha': la piel del panel), $dianoche (bool: el sol y la luna),
  *   $esquinas ('web': las del Kit | 'diseno': las de la piel),
+ *   $punto (bool: el punto delante de cada vino, el de El Churra),
  *   $toques (bool: «Ayúdame a elegir», la capa con Tres toques),
  *   $precios (bool), $datos (JSON ya escapado), $rotulo, $titulo, $entradilla, $n, $np,
  *   $pie (el texto del pie, sin fecha; vacío, no hay pie)
@@ -20,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 ?>
-<div class="cv-explorador<?php echo $precios ? '' : ' sin-precio'; ?>" data-cv-root data-diseno="<?php echo esc_attr( $diseno ); ?>" data-modo="<?php echo esc_attr( $modo ); ?>" data-escena="<?php echo esc_attr( $escena ); ?>" data-panel="<?php echo esc_attr( $panel ); ?>" data-esquinas="<?php echo esc_attr( $esquinas ); ?>">
+<div class="cv-explorador<?php echo $precios ? '' : ' sin-precio'; ?>" data-cv-root data-diseno="<?php echo esc_attr( $diseno ); ?>" data-modo="<?php echo esc_attr( $modo ); ?>" data-escena="<?php echo esc_attr( $escena ); ?>" data-panel="<?php echo esc_attr( $panel ); ?>" data-esquinas="<?php echo esc_attr( $esquinas ); ?>" data-punto="<?php echo $punto ? 'si' : 'no'; ?>">
 <script type="application/json" data-cv-datos><?php echo $datos; // phpcs:ignore WordPress.Security.EscapeOutput ?></script>
 <div class="escena">
 
@@ -50,7 +51,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
   <aside class="globo red" id="cv-red" aria-label="La bodega como red">
     <div class="globo__marco">
-      <canvas id="cv-red-lienzo" role="img" aria-label="Países, zonas, bodegas y uvas de la carta, unidos en una red"></canvas>
+      <canvas id="cv-red-lienzo" role="img" aria-label="Países y zonas de la carta, unidos en una red; al pinchar uno salen sus uvas y bodegas"></canvas>
       <div class="globo__tip" id="cv-red-tip"></div>
       <p class="red__forma" id="cv-red-forma">La red se está colocando…</p>
       <div class="globo__zoom" aria-label="Acercar, alejar y movimiento">
@@ -70,6 +71,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <label class="buscar-caja"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><input class="buscar" id="cv-f-texto" type="search" placeholder="Vino, bodega, zona o uva" autocomplete="off" aria-label="Buscar"><button type="button" class="buscar__borrar" id="cv-f-texto-borrar" aria-label="Borrar la búsqueda" title="Borrar" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button></label>
         <div class="campos">
           <label class="campo campo--uva" data-todo="Todas"><svg class="ico ico--campo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.2V3.2"/><path d="M12 4.8c1.6-1.7 4.2-1.9 5.6-.7-1.4 1.6-3.8 1.9-5.6.7Z"/><circle cx="7.7" cy="9.6" r="2.1"/><circle cx="12" cy="9.6" r="2.1"/><circle cx="16.3" cy="9.6" r="2.1"/><circle cx="9.85" cy="13.5" r="2.1"/><circle cx="14.15" cy="13.5" r="2.1"/><circle cx="12" cy="17.4" r="2.1"/></svg><span class="campo__rot">Uva</span><span class="campo__val">Todas</span><svg class="ico ico--flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg><button type="button" class="campo__quitar" aria-label="Quitar el filtro: uva" title="Quitar" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button><select class="sel" id="cv-f-uva" aria-label="Uva"><option value="">Uva</option></select></label>
+          <label class="campo campo--pais" data-todo="Todos"><svg class="ico ico--campo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.5 2.3 3.8 5.1 3.8 8.5s-1.3 6.2-3.8 8.5c-2.5-2.3-3.8-5.1-3.8-8.5s1.3-6.2 3.8-8.5Z"/></svg><span class="campo__rot">País</span><span class="campo__val">Todos</span><svg class="ico ico--flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg><button type="button" class="campo__quitar" aria-label="Quitar el filtro: país" title="Quitar" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button><select class="sel" id="cv-f-pais" aria-label="País"><option value="">País</option></select></label>
           <label class="campo campo--zona" data-todo="Todas"><svg class="ico ico--campo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.8-6.5-11a6.5 6.5 0 0 1 13 0c0 5.2-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/></svg><span class="campo__rot">Zona</span><span class="campo__val">Todas</span><svg class="ico ico--flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg><button type="button" class="campo__quitar" aria-label="Quitar el filtro: zona" title="Quitar" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button><select class="sel" id="cv-f-zona" aria-label="Zona"><option value="">Zona</option></select></label>
           <label class="campo campo--bodega" data-todo="Todas"><svg class="ico ico--campo" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10c1.7 2.6 1.7 14.4 0 17H7c-1.7-2.6-1.7-14.4 0-17Z"/><path d="M5.9 8.5h12.2M5.9 15.5h12.2"/></svg><span class="campo__rot">Bodega</span><span class="campo__val">Todas</span><svg class="ico ico--flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg><button type="button" class="campo__quitar" aria-label="Quitar el filtro: bodega" title="Quitar" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button><select class="sel" id="cv-f-bodega" aria-label="Bodega"><option value="">Bodega</option></select></label>
           <label class="campo campo--precio<?php echo $precios ? '' : ' oculto'; ?>" data-todo="Todos"><svg class="ico ico--campo" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 6.6a6.6 6.6 0 1 0 0 10.8"/><path d="M4.8 10.2h8.8M4.8 13.8h8.8"/></svg><span class="campo__rot">Precio</span><span class="campo__val">Todos</span><svg class="ico ico--flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg><button type="button" class="campo__quitar" aria-label="Quitar el filtro: precio" title="Quitar" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button><select class="sel" id="cv-f-precio" aria-label="Precio">

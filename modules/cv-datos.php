@@ -53,6 +53,8 @@ class Caracool_Vinos_Datos {
 			'diseno'   => ( isset( $d['diseno'] ) && 'columnas' === $d['diseno'] ) ? 'columnas' : 'mundo',
 			'panel'    => ( isset( $d['panel'] ) && in_array( $d['panel'], array( 'mosaico', 'pildoras', 'ficha' ), true ) ) ? $d['panel'] : 'mosaico',
 			'esquinas' => ( isset( $d['esquinas'] ) && 'diseno' === $d['esquinas'] ) ? 'diseno' : 'web',
+			// el punto delante de cada vino: 'si' o 'no' si Bodega lo ha decidido; null si no dice nada (automático)
+			'punto'    => ( isset( $d['punto'] ) && in_array( $d['punto'], array( 'si', 'no' ), true ) ) ? $d['punto'] : null,
 		);
 	}
 

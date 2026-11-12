@@ -269,17 +269,38 @@
     d3.geoStream(g, { point: function (x, y) { var d = d3.geoDistance(centro, [x, y]); if (d > r) { r = d; } }, lineStart: NADA, lineEnd: NADA, polygonStart: NADA, polygonEnd: NADA, sphere: NADA });
     return r;
   }
-  // el atlas ha llegado: un path por país, que se pinta ya con lo que haya
+  // el atlas ha llegado: un path por país con vinos, que se pinta ya con lo que haya.
+  // 0.9.2: los países sin vinos no van uno a uno: se funden en una sola forma, la tierra, sin
+  // fronteras por dentro (se ven los continentes). Al girar se pintan unas pocas formas en vez
+  // de 177. Los pocos sin vinos que tienen detalle 1:50M (los vecinos de los que sí tienen) van
+  // sueltos con él, pero del mismo color y sin raya entre ellos: tampoco se ven sus fronteras.
+  var tierra = null, sinVinos = {}, todosSin = [], mundoTopo = null, geosSin = [];
+  // SOLO_VINOS (laboratorio): ni tierra ni países sin vinos; solo la malla y los países de la carta
+  // (lo decide Bodega, en la pestaña Diseño del cliente: llega como data-globo en el bloque)
+  var SOLO_VINOS = /*SOLO_VINOS*/false || raiz.getAttribute('data-globo') === 'solo-vinos';
   function ponerPaises(mundo) {
-    topojson.feature(mundo, mundo.objects.countries).features.forEach(function (f) {
+    var geos = mundo.objects.countries.geometries, sin = [];
+    topojson.feature(mundo, mundo.objects.countries).features.forEach(function (f, i) {
+      var c = d3.geoCentroid(f);
+      if (!(NUM[f.id] && PAISES[NUM[f.id]])) {
+        sin.push(geos[i]);
+        sinVinos[f.id] = { el: null, f: f, c: c, r: radioDe(f, c), fino: null, rf: 0, vacio: true };
+        todosSin.push(sinVinos[f.id]);
+        return;
+      }
       var p = el('path', 'pais');
       p.setAttribute('data-id', f.id);
-      if (NUM[f.id] && PAISES[NUM[f.id]]) { p.classList.add('con-vinos'); }
+      p.classList.add('con-vinos');
       gPaises.appendChild(p);
-      var c = d3.geoCentroid(f);
       capaPais[f.id] = { el: p, f: f, c: c, r: radioDe(f, c), fino: null, rf: 0, vacio: false };
       todosPaises.push(capaPais[f.id]);
     });
+    mundoTopo = mundo; geosSin = sin;
+    if (SOLO_VINOS) { todosSin = []; }
+    if (sin.length && !SOLO_VINOS) {
+      tierra = { el: el('path', 'tierra'), f: topojson.merge(mundo, sin), vacio: false };
+      gPaises.insertBefore(tierra.el, gPaises.firstChild);
+    }
     hayMundo = true;
     marcarPaises();
     pintar();
@@ -300,9 +321,15 @@
   // los países a 1:50M se guardan junto a los de 1:110M: se usan al acercarse
   function ponerFinos(datos) {
     ((datos && datos.features) || []).forEach(function (f) {
-      var c = capaPais[String(f.id)];
+      var c = capaPais[String(f.id)] || sinVinos[String(f.id)];
       if (c) { c.fino = f; c.rf = radioDe(f, c.c); }
     });
+    // la tierra se queda con los sin vinos que no tienen detalle (casi todos); los que sí lo tienen
+    // van sueltos con él, del mismo color
+    if (tierra && mundoTopo) {
+      var quedan = geosSin.filter(function (g) { var c = sinVinos[String(g.id)]; return !(c && c.fino); });
+      tierra.f = topojson.merge(mundoTopo, quedan);
+    }
     hayFinos = true;
     pintar();
   }
@@ -363,6 +390,17 @@
     gMalla.setAttribute('d', ruta(malla()) || 'M0 0');
     // lo que queda al otro lado del globo ni se calcula
     var rot = proy.rotate(), ctr = [-rot[0], -rot[1]], fino = hayFinos && proy.scale() / R > CORTE_FINO;
+    // la tierra: de lejos, una sola forma; de cerca, los sin vinos sueltos con su detalle
+    if (tierra) { var dt = ruta(tierra.f); tierra.el.setAttribute('d', dt || 'M0 0'); }
+    todosSin.forEach(function (c) {
+      if (!fino || !c.fino || d3.geoDistance(c.c, ctr) - c.rf >= HORIZONTE) {
+        if (c.el && !c.vacio) { c.el.setAttribute('d', 'M0 0'); c.vacio = true; }
+        return;
+      }
+      if (!c.el) { c.el = el('path', 'tierra'); gPaises.insertBefore(c.el, tierra ? tierra.el.nextSibling : gPaises.firstChild); }
+      var dd = ruta(c.fino);
+      c.el.setAttribute('d', dd || 'M0 0'); c.vacio = !dd;
+    });
     todosPaises.forEach(function (c) {
       var g = (fino && c.fino) ? c.fino : c.f, r = (fino && c.fino) ? c.rf : c.r;
       if (d3.geoDistance(c.c, ctr) - r >= HORIZONTE) {
@@ -411,6 +449,8 @@
   var giro = null;
   function curva(t) { return 1 - Math.pow(1 - t, 4); } // sale rápido y frena largo
   function girarA(lon, lat, ms, zoom) {
+    fijarBalanceo(); // el giro sale de donde se ve el globo, con el balanceo incluido
+    if (typeof pararInercia === 'function') { pararInercia(); }
     var desde = proy.rotate(), escDesde = proy.scale(), escHasta = R * (zoom || 1);
     // un poco por debajo del centro de la vista, para que el país no quede tapado por el texto de arriba
     var alza = 8 / (zoom || 1);
@@ -428,7 +468,7 @@
       var ll = inter(k);
       proy.rotate([-ll[0], -ll[1]]).scale(escDesde + (escHasta - escDesde) * k);
       pintar();
-      if (t < 1) { giro = requestAnimationFrame(paso); } else { giro = null; latir(); }
+      if (t < 1) { giro = requestAnimationFrame(paso); } else { giro = null; quieto = performance.now(); latir(); }
     }
     giro = requestAnimationFrame(paso);
   }
@@ -463,21 +503,56 @@
   }
 
   // ── arrastrar para girar ──
-  var arr = null, quieto = 0;
+  // 0.9.4: con inercia. Mientras se arrastra se guarda la velocidad de los últimos movimientos
+  // (grados por milisegundo); al soltar, el globo sigue con ella y frena solo, deprisa al
+  // principio y suave al final (la velocidad se reduce a la mitad cada ~240 ms). Agarrarlo
+  // otra vez lo para debajo del ratón. Un toque sin arrastre sigue siendo un clic.
+  var arr = null, quieto = 0, inercia = null, INERCIA_TAU = 350, INERCIA_MAX = 0.6;
+  function pararInercia() { if (inercia) { cancelAnimationFrame(inercia.raf); inercia = null; } }
+  function girarConInercia(vx, vy) {
+    var v = Math.sqrt(vx * vx + vy * vy);
+    if (reducido || v < 0.004) { return; }
+    if (v > INERCIA_MAX) { vx *= INERCIA_MAX / v; vy *= INERCIA_MAX / v; }
+    inercia = { vx: vx, vy: vy, ts: 0, raf: 0 };
+    function paso(ts) {
+      if (!inercia) { return; }
+      if (!inercia.ts) { inercia.ts = ts; inercia.raf = requestAnimationFrame(paso); return; }
+      var dt = Math.min(50, ts - inercia.ts); inercia.ts = ts;
+      var r = proy.rotate(), f = Math.exp(-dt / INERCIA_TAU);
+      // lo que recorre en este cuadro es la integral de la velocidad que va cayendo
+      var dx = inercia.vx * INERCIA_TAU * (1 - f), dy = inercia.vy * INERCIA_TAU * (1 - f);
+      var lat = r[1] + dy;
+      if (lat > 70 || lat < -70) { lat = Math.max(-70, Math.min(70, lat)); inercia.vy = 0; }
+      proy.rotate([r[0] + dx, lat]);
+      inercia.vx *= f; inercia.vy *= f;
+      pintar(); quieto = performance.now();
+      if (Math.abs(inercia.vx) + Math.abs(inercia.vy) < 0.002) { inercia = null; return; }
+      inercia.raf = requestAnimationFrame(paso);
+    }
+    inercia.raf = requestAnimationFrame(paso);
+  }
   svg.addEventListener('pointerdown', function (e) {
     var p = e.target.closest ? e.target.closest('.pais') : null;
     var zc = e.target.closest ? e.target.closest('.zona') : null;
-    arr = { x: e.clientX, y: e.clientY, r: proy.rotate(), pais: p, zona: zc, movido: false };
+    pararInercia();
+    fijarBalanceo();
+    arr = { x: e.clientX, y: e.clientY, r: proy.rotate(), pais: p, zona: zc, movido: false, muestras: [] };
     svg.classList.add('arrastrando'); try { svg.setPointerCapture(e.pointerId); } catch (x) {}
     if (giro) { cancelAnimationFrame(giro); giro = null; }
     pedirFinos(); // tocar el globo es la señal de que se va a mirar de cerca
   });
   svg.addEventListener('pointermove', function (e) {
-    if (!arr) { return; }
+    // 0.9.17: con el ratón encima del globo no se mueve nada, para poder apuntar a una zona
+    if (!arr) { if (e.pointerType === 'mouse') { quieto = performance.now(); } return; }
     if (Math.abs(e.clientX - arr.x) > 4 || Math.abs(e.clientY - arr.y) > 4) { arr.movido = true; }
     var k = 0.45 * (282 / proy.scale()) * (W / svg.getBoundingClientRect().width);
-    proy.rotate([arr.r[0] + (e.clientX - arr.x) * k, Math.max(-70, Math.min(70, arr.r[1] - (e.clientY - arr.y) * k))]);
-    pintar(); quieto = performance.now();
+    var nueva = [arr.r[0] + (e.clientX - arr.x) * k, Math.max(-70, Math.min(70, arr.r[1] - (e.clientY - arr.y) * k))];
+    proy.rotate(nueva);
+    // las últimas posiciones (de los últimos 100 ms) para saber a qué velocidad se soltó
+    var ahora = performance.now();
+    arr.muestras.push([ahora, nueva[0], nueva[1]]);
+    while (arr.muestras.length > 2 && ahora - arr.muestras[0][0] > 100) { arr.muestras.shift(); }
+    pintar(); quieto = ahora;
   });
   function soltar(e) {
     var fue = arr; arr = null; svg.classList.remove('arrastrando');
@@ -485,6 +560,15 @@
     // país, así que un toque sin arrastre se resuelve aquí.
     if (e && e.type === 'pointerup' && fue && !fue.movido) {
       if (fue.zona) { pincharZona(fue.zona); } else if (fue.pais) { pincharPais(fue.pais); }
+      return;
+    }
+    // como en la red: la velocidad del último tramo del arrastre (los últimos ~50 ms). Si el ratón se
+    // paró antes de soltar, esa velocidad se va apagando con la pausa (a los 300 ms ya casi no queda)
+    if (e && e.type === 'pointerup' && fue && fue.muestras.length > 1) {
+      var m = fue.muestras, u = m[m.length - 1], j = m.length - 2;
+      while (j > 0 && u[0] - m[j][0] < 50) { j--; }
+      var pr = m[j], dt = Math.max(16, u[0] - pr[0]), apaga = Math.exp(-(performance.now() - u[0]) / 120);
+      girarConInercia((u[1] - pr[1]) / dt * apaga, (u[2] - pr[2]) / dt * apaga);
     }
   }
   svg.addEventListener('pointerup', soltar);
@@ -500,18 +584,71 @@
      tiempo). Antes se repintaban los 177 países en cada cuadro, lo que más
      CPU gastaba de todo el explorador, incluso con el mapa oculto. */
   var deriva = !reducido, derivaViva = false, derivaTs = 0, derivaCoste = 0, globoVisible = true;
+  // 0.9.1: si el aparato pinta rápido (menos de 6 ms por cuadro), la deriva va cuadro a cuadro, fluida;
+  // si tarda más, vuelve al ritmo ahorrador de antes. Y con un país o un vino elegido el globo ya no se
+  // queda quieto: se balancea unos grados alrededor de donde está y vuelve, como la red. El balanceo
+  // se suma a la rotación y se quita antes de cualquier giro o arrastre, así nunca se acumula.
+  // 0.9.3: lo que decide si va fluido es el ritmo real de cuadros, no lo que tarda el JS en calcular
+  // (en la 0.9.2 se medía solo eso y, en pantallas grandes, se quedaba en el ritmo ahorrador aunque el
+  // navegador iba sobrado). Empieza cuadro a cuadro; si durante un segundo seguido los cuadros llegan
+  // tarde (más de 24 ms de media), pasa al ritmo ahorrador hasta que se recargue la página.
+  var balanceo = [0, 0], balanceoDesde = 0, ahorro = false, ritmo = 16.7, lento = 0, derivaUlt = 0;
   function derivando() { return deriva && hayGlobo() && globoVisible && !document.hidden; }
+  // 0.9.17: el balanceo ya no gira la proyección ni repinta el mapa en cada cuadro. Se calcula cuánto
+  // se movería en pantalla el centro de la vista con esos grados y se aplica como un desplazamiento
+  // (translate con decimales) a las capas del globo: se mueve a subpíxel, fluido, y apenas gasta. La
+  // proyección se queda donde está, así que el balanceo nunca se acumula ni descuadra los clics.
+  var capasGlobo = [esfera, gMalla, gPaises, gZonas, aro, punto, rotulo], hayDesplazamiento = false;
+  function desplazar(dx, dy) {
+    var v = (dx || dy) ? 'translate(' + dx.toFixed(2) + ' ' + dy.toFixed(2) + ')' : null;
+    capasGlobo.forEach(function (c) { if (v) { c.setAttribute('transform', v); } else { c.removeAttribute('transform'); } });
+    hayDesplazamiento = !!v;
+  }
+  function desplazamientoDe(nb) {
+    var r = proy.rotate(), ctr = [-r[0], -r[1]], a = proy(ctr);
+    proy.rotate([r[0] + nb[0], Math.max(-70, Math.min(70, r[1] + nb[1]))]);
+    var b = proy(ctr);
+    proy.rotate(r);
+    return (a && b) ? [b[0] - a[0], b[1] - a[1]] : [0, 0];
+  }
+  // quita el balanceo sin mover el globo de golpe: lo que se ve pasa a ser la rotación de verdad
+  function fijarBalanceo() {
+    if (balanceo[0] || balanceo[1]) {
+      var r = proy.rotate();
+      proy.rotate([r[0] + balanceo[0], Math.max(-70, Math.min(70, r[1] + balanceo[1]))]);
+      balanceo = [0, 0]; desplazar(0, 0); pintar();
+    } else if (hayDesplazamiento) { desplazar(0, 0); }
+    balanceoDesde = 0;
+  }
+  function soltarBalanceo() { fijarBalanceo(); }
   function derivar(ts) {
-    if (!derivando()) { derivaViva = false; return; }
-    if (!arr && !giro && !vinoActivo && !paisCerca && proy.scale() / R < 1.05 && performance.now() - quieto > 2500) {
-      if (!derivaTs) { derivaTs = ts; }
-      else if (ts - derivaTs >= Math.max(80, derivaCoste * 5)) {
-        var r = proy.rotate(), t0 = performance.now();
-        proy.rotate([r[0] + 2.1 * Math.min(ts - derivaTs, 600) / 1000, r[1]]);
-        derivaTs = ts; pintar();
-        derivaCoste = (derivaCoste + (performance.now() - t0)) / 2;
-      }
-    } else { derivaTs = 0; }
+    if (!derivando()) { derivaViva = false; derivaUlt = 0; return; }
+    if (derivaUlt) { ritmo += (Math.min(100, ts - derivaUlt) - ritmo) * 0.1; }
+    derivaUlt = ts;
+    var cerca = vinoActivo || paisCerca || proy.scale() / R >= 1.05;
+    // 0.9.17: después de llegar a un país o una zona, o con el ratón encima, el globo se queda quieto
+    // cinco segundos antes de empezar a balancearse; así se puede pinchar en una zona sin que se mueva
+    var libre = !arr && !giro && performance.now() - quieto > (cerca ? 5000 : 2500);
+    if (!libre) { if (balanceo[0] || balanceo[1]) { fijarBalanceo(); } derivaTs = 0; balanceoDesde = 0; }
+    else if (cerca) {
+      // el balanceo va cuadro a cuadro siempre: no repinta nada, solo desplaza las capas
+      if (!balanceoDesde) { balanceoDesde = ts; }
+      var kb = proy.scale() / R, en = Math.min(1, (ts - balanceoDesde) / 1500), ampb = en * en * (3 - 2 * en) / Math.sqrt(kb);
+      balanceo = [ampb * 4 * Math.sin(ts / 4100), ampb * 1.5 * Math.sin(ts / 5600 + 1.3)];
+      var dd = desplazamientoDe(balanceo);
+      desplazar(dd[0], dd[1]);
+      derivaTs = ts;
+    }
+    else if (!derivaTs) { derivaTs = ts; }
+    else if (ts - derivaTs >= (ahorro ? Math.max(80, derivaCoste * 5) : 0)) {
+      // (los cuatro primeros segundos no cuentan: mientras carga la página, todo va a trompicones)
+      if (!ahorro && ts > 4000) { lento = ritmo > 24 ? lento + (ts - derivaTs) : 0; if (lento > 1000) { ahorro = true; } }
+      if (balanceo[0] || balanceo[1] || hayDesplazamiento) { fijarBalanceo(); }
+      var r = proy.rotate(), t0 = performance.now();
+      proy.rotate([r[0] + 2.1 * Math.min(ts - derivaTs, 600) / 1000, r[1]]);
+      derivaTs = ts; pintar();
+      derivaCoste = (derivaCoste + (performance.now() - t0)) / 2;
+    }
     requestAnimationFrame(derivar);
   }
   function encenderDeriva() {
@@ -736,10 +873,13 @@
   }
 
   /* ── Filtros ───────────────────────────────────────────────────────── */
-  var filtro = { tipo: '', uva: '', bodega: '', zona: '', precio: '', parker: '', pais: '', texto: '', mis: compartida ? 'compartida' : '', top: false };
+  var filtro = { tipo: '', uva: '', bodega: '', zona: '', precio: '', parker: '', penin: '', pais: '', texto: '', mis: compartida ? 'compartida' : '', top: false };
   // el desplegable de Parker solo existe si algún vino trae puntos
   var hayParker = VINOS.some(function (v) { return v.parker; });
   document.getElementById('cv-f-parker').closest('.campo').classList.toggle('oculto', !hayParker);
+  // y el de Peñín, si Bodega los manda (solo a las webs que los tienen encendidos) y algún vino trae
+  var hayPenin = VINOS.some(function (v) { return v.penin; });
+  document.getElementById('cv-f-penin').closest('.campo').classList.toggle('oculto', !hayPenin);
   // el de país, si la carta tiene vinos de más de un país; entonces Zona espera a que se elija uno
   // (si la página trae el marcado de antes, sin el campo, todo sigue como antes)
   var selPais = document.getElementById('cv-f-pais');
@@ -748,7 +888,7 @@
   (function () { var cs = raiz.querySelector('.filtros .campos'); if (cs) { cs.setAttribute('data-n', String(cs.querySelectorAll('.campo:not(.oculto)').length)); } }());
   var TIPOS = [
     ['', 'Todos'], ['tinto', 'Tintos'], ['blanco', 'Blancos'], ['champagne', 'Champagne'],
-    ['espumoso', 'Espumosos'], ['rosado', 'Rosados'], ['magnum', 'Mágnum']
+    ['espumoso', 'Espumosos'], ['rosado', 'Rosados'], ['dulce', 'Dulces'], ['generoso', 'Generosos'], ['magnum', 'Mágnum']
   ];
   /* la gota: el color del vino en la copa (tokens --vino-*); el mágnum,
      que es formato y no color, lleva una botella */
@@ -759,13 +899,30 @@
   var filaTipos = document.getElementById('cv-fila-tipos');
   var filaActivos = document.getElementById('cv-fila-activos');
   var hayMagnum = VINOS.some(function (v) { return v.formato === 'magnum'; });
+  // dulces y generosos solo si la carta los tiene (no todas las casas los llevan)
+  var hayTipo = {}; VINOS.forEach(function (v) { hayTipo[v.tipo] = 1; });
   TIPOS.forEach(function (t) {
     if (t[0] === 'magnum' && !hayMagnum) { return; }
+    if ((t[0] === 'dulce' || t[0] === 'generoso') && !hayTipo[t[0]]) { return; }
     var b = document.createElement('button'); b.type = 'button'; b.className = 'chip' + (t[0] === '' ? ' on' : '');
     b.dataset.v = t[0]; b.innerHTML = gota(t[0]) + '<span>' + t[1] + '</span><small></small>';
     b.addEventListener('click', function () { filtro.tipo = t[0]; cerrarFicha(false); aplicar(); });
     filaTipos.appendChild(b);
   });
+  /* En el mosaico, filas parejas: con los que caben por fila (botones de
+     140 px como mínimo, 5 como mucho) se calcula cuántas filas hacen falta
+     y se reparten los botones entre ellas. 8 botones: 4 + 4, no 5 + 3. */
+  function columnasTipos() {
+    // (la variable solo la usa la hoja en el mosaico; en las otras pieles no hace nada)
+    var n = filaTipos.querySelectorAll('.chip').length;
+    var ancho = filaTipos.clientWidth;
+    if (!n || !ancho) { return; }
+    var caben = Math.max(1, Math.min(5, Math.floor((ancho + 6) / (140 + 6))));
+    var filas = Math.ceil(n / caben);
+    filaTipos.style.setProperty('--tipos-cols', String(Math.ceil(n / filas)));
+  }
+  columnasTipos();
+  window.addEventListener('resize', function () { columnasTipos(); });
   // el botón de «Mis vinos»: fijo al final de la fila de tipos, siempre a la vista
   var chipMisEl = document.createElement('button'); chipMisEl.type = 'button'; chipMisEl.className = 'mis-boton';
   chipMisEl.innerHTML = CORAZON + 'Mis vinos<small></small>';
@@ -949,6 +1106,7 @@
       var r = filtro.precio.split('-'); if (!(v.precio >= +r[0] && v.precio < +r[1])) { return false; }
     }
     if (salvo !== 'parker' && filtro.parker && !(v.parker && v.parker >= +filtro.parker)) { return false; }
+    if (salvo !== 'penin' && filtro.penin && !(v.penin && v.penin >= +filtro.penin)) { return false; }
     if (salvo !== 'texto' && filtro.texto) {
       var q = normal(filtro.texto);
       var pajar = normal([v.nombre, v.apelacion, v.bodega, v.zona, v.seccion, v.uvas_texto, v.uvas.join(' ')].join(' '));
@@ -998,7 +1156,7 @@
 
     // los desplegables enseñan lo que filtra, venga de donde venga (del
     // propio desplegable, de la ficha o del globo), y en negro
-    var sync = { 'cv-f-uva': 'uva', 'cv-f-bodega': 'bodega', 'cv-f-pais': 'pais', 'cv-f-zona': 'zona', 'cv-f-precio': 'precio', 'cv-f-parker': 'parker' };
+    var sync = { 'cv-f-uva': 'uva', 'cv-f-bodega': 'bodega', 'cv-f-pais': 'pais', 'cv-f-zona': 'zona', 'cv-f-precio': 'precio', 'cv-f-parker': 'parker', 'cv-f-penin': 'penin' };
     Object.keys(sync).forEach(function (id) {
       var s = document.getElementById(id), v = filtro[sync[id]] || '';
       if (!s) { return; }
@@ -1028,13 +1186,13 @@
   function pintarActivos() {
     var chips = [];
     if (filtro.pais && PAISES[filtro.pais] && !variosPaises) { chips.push(['pais', 'País', PAISES[filtro.pais].nombre]); }
-    // uva, zona, bodega, precio, Parker y la búsqueda ya se ven en su campo,
+    // uva, zona, bodega, precio, Parker, Peñín y la búsqueda ya se ven en su campo,
     // con su aspa: aquí va solo lo que no tiene campo (el país pinchado en
     // el globo, la selección compartida) y «Quitar todos»
     // «mis» no va aquí: el botón de Mis vinos ya enseña el estado y es la salida
     if (filtro.mis === 'compartida') { chips.push(['mis', 'Solo', 'Selección compartida']); }
     filaActivos.innerHTML = '';
-    var cuantos = [filtro.pais, filtro.zona, filtro.bodega, filtro.uva, filtro.precio, filtro.parker, filtro.texto, filtro.mis === 'compartida'].filter(Boolean).length;
+    var cuantos = [filtro.pais, filtro.zona, filtro.bodega, filtro.uva, filtro.precio, filtro.parker, filtro.penin, filtro.texto, filtro.mis === 'compartida'].filter(Boolean).length;
     filaActivos.classList.toggle('oculto', !chips.length && cuantos < 2);
     chips.forEach(function (c) {
       var b = document.createElement('button'); b.type = 'button'; b.className = 'activo-chip';
@@ -1094,6 +1252,8 @@
   function sitio(v) { if (!CFG.ubicacion) { return ''; } var s = v.ref || v.codigo; return s ? '<span class="sitio" title="Ubicación en bodega">' + s + '</span>' : ''; }
   function parkerAnada(v) { return !v.parker_anada ? '' : (v.parker_anada === 'NV' ? 'sin añada' : 'añada ' + v.parker_anada); }
   function parker(v) { return v.parker ? '<em class="rp" title="Puntos Parker (The Wine Advocate)' + (parkerAnada(v) ? ', ' + parkerAnada(v) : '') + '">' + (v.parker_txt || v.parker) + ' RP</em>' : ''; }
+  function peninAnada(v) { return !v.penin_anada ? '' : (v.penin_anada === 'NV' ? 'sin añada' : 'añada ' + v.penin_anada); }
+  function penin(v) { return v.penin ? '<em class="pn" title="Puntos Peñín' + (peninAnada(v) ? ', ' + peninAnada(v) : '') + '">' + (v.penin_txt || v.penin) + ' Peñín</em>' : ''; }
 
   /* ── La lista ──────────────────────────────────────────────────────── */
   var listaEl = document.getElementById('cv-lista');
@@ -1111,7 +1271,12 @@
     if (v.iso === 'ESP') { return '1-' + z; }
     return '2-' + p + '-' + z;
   }
+  /* Una carta que se agrupa a su manera (Por Herencia: «Blancos de España
+     del Mediterráneo»…) llega con orden 'carta': la lista va en el orden de
+     la carta, con sus apartados tal cual y sin el país al lado. */
+  var ORDEN_CARTA = (typeof CFG !== 'undefined') && CFG.orden === 'carta';
   function ordenar(lista) {
+    if (ORDEN_CARTA) { return lista.slice().sort(function (a, b) { return a.i - b.i; }); }
     return lista.map(function (v, i) { return { v: v, i: i, k: ordenZona(v, 'seccion') + '|' + (v.formato === 'magnum' ? '1' : '0') }; })
       .sort(function (a, b) { return a.k < b.k ? -1 : (a.k > b.k ? 1 : a.i - b.i); })
       .map(function (x) { return x.v; });
@@ -1150,8 +1315,8 @@
       var b = document.createElement('button'); b.type = 'button'; b.className = 'vino';
       b.dataset.i = v.i;
       b.innerHTML =
-        '<span class="vino__nombre">' + v.nombre + (anadas(v) ? '<span>' + anadas(v) + '</span>' : '') + (v.formato === 'magnum' ? '<em>Mágnum</em>' : '') + parker(v) + '</span>' +
-        '<span class="vino__precio">' + (v.precio ? v.precio + ' €' : '') + '</span>' +
+        '<span class="vino__nombre">' + v.nombre + (anadas(v) ? '<span>' + anadas(v) + '</span>' : '') + (v.formato === 'magnum' ? '<em>Mágnum</em>' : '') + parker(v) + penin(v) + '</span>' +
+        '<span class="vino__precio">' + (v.precio ? v.precio + ' €' : (v.precio_texto ? '<small class="consultar" title="' + v.precio_texto + '">Consultar</small>' : '')) + '</span>' +
         // la uva y la bodega, con el punto medio solo entre las dos (un vino sin uva no empieza por « · »)
         '<span class="vino__datos">' + [v.uvas_texto || v.uvas.join(', '), v.bodega ? '<b>' + v.bodega + '</b>' : ''].filter(Boolean).join(' · ') + sitio(v) + '</span>';
       b.addEventListener('click', function () { elegir(v); });
@@ -1208,7 +1373,7 @@
       if (agrupar && clave !== ultima) {
         ultima = clave; ultimoGrupo = null;
         var g = document.createElement('div'); g.className = 'grupo';
-        g.innerHTML = '<h3>' + (legible(clave) || 'Sin zona') + '</h3><small>' + (v.pais || '') + '</small>';
+        g.innerHTML = ORDEN_CARTA ? '<h3>' + (clave || 'Sin apartado') + '</h3>' : '<h3>' + (legible(clave) || 'Sin zona') + '</h3><small>' + (v.pais || '') + '</small>';
         frag.appendChild(g);
       }
       // el subrótulo de la carta: la bodega («Bodega Casa Castillo») o el
@@ -1282,12 +1447,13 @@
     if (v.apelacion && normal(v.apelacion) !== normal(legible(v.zona))) { lugar = v.apelacion + ' · ' + lugar; }
     if (v.zona) { datos.push(lugar); }
     if (v.parker) { datos.push('<b>' + (v.parker_txt || v.parker) + ' puntos Parker</b>' + (parkerAnada(v) ? ' (' + parkerAnada(v) + ')' : '')); }
+    if (v.penin) { datos.push('<b>' + (v.penin_txt || v.penin) + ' puntos Peñín</b>' + (peninAnada(v) ? ' (' + peninAnada(v) + ')' : '')); }
     fichaEl.innerHTML =
       '<button class="ficha__volver" type="button" id="cv-volver">Volver a la lista</button>' +
       '<p class="ficha__rotulo">' + tipoLegible(v) + (v.anadas.length > 1 ? ' · Añadas ' + anadas(v) : '') + '</p>' +
       '<div class="ficha__cabeza">' +
         '<h2>' + v.nombre + (v.anadas.length === 1 ? '<span>' + v.anadas[0] + '</span>' : '') + '</h2>' +
-        '<div class="ficha__derecha">' + (v.precio ? '<div class="ficha__precio">' + v.precio + ' €' + (v.formato === 'magnum' ? '<small>mágnum</small>' : '') + '</div>' : '') + '<span id="cv-ficha-corazon"></span></div>' +
+        '<div class="ficha__derecha">' + (v.precio ? '<div class="ficha__precio">' + v.precio + ' €' + (v.formato === 'magnum' ? '<small>mágnum</small>' : '') + '</div>' : (v.precio_texto ? '<div class="ficha__precio ficha__precio--consultar">' + v.precio_texto + '</div>' : '')) + '<span id="cv-ficha-corazon"></span></div>' +
       '</div>' +
       (datos.length ? '<p class="ficha__datos">' + datos.join('<i>·</i>') + '</p>' : '') +
       '<div class="ficha__mas">' +
@@ -1314,7 +1480,7 @@
     });
   }
   function vaciarFiltro() {
-    filtro = { tipo: '', uva: '', bodega: '', zona: '', precio: '', pais: '', texto: '', mis: '', top: false };
+    filtro = { tipo: '', uva: '', bodega: '', zona: '', precio: '', parker: '', penin: '', pais: '', texto: '', mis: '', top: false };
     document.getElementById('cv-f-texto').value = '';
   }
 
@@ -1338,6 +1504,7 @@
   });
   document.getElementById('cv-f-precio').addEventListener('change', function () { filtro.precio = this.value; cerrarFicha(false); aplicar(); });
   document.getElementById('cv-f-parker').addEventListener('change', function () { filtro.parker = this.value; cerrarFicha(false); aplicar(); });
+  document.getElementById('cv-f-penin').addEventListener('change', function () { filtro.penin = this.value; cerrarFicha(false); aplicar(); });
   var tempo = null;
   document.getElementById('cv-f-texto').addEventListener('input', function () {
     var q = this.value; clearTimeout(tempo);
@@ -1447,6 +1614,9 @@
     var A = new Int32Array(H.length), B = new Int32Array(H.length), L = new Float32Array(H.length);
     var LARGO = { pz: 1.45, zb: 0.5, zu: 1.05 };
     H.forEach(function (h, e) { A[e] = h[0]; B[e] = h[1]; L[e] = LARGO[h[2]]; });
+    // el peso de cada punto, siempre (no solo al formar la red): la red de un país lo usa también
+    // cuando la general viene ya guardada de otra visita
+    N.forEach(function (d, i) { masa[i] = 1 + Math.sqrt(d.c) * (d.t === 'p' ? 0.9 : d.t === 'z' ? 0.55 : 0.35); esP[i] = d.t === 'p' ? 1 : 0; });
     var semilla = 7;
     function azar() { semilla = (semilla * 1103515245 + 12345) & 0x7fffffff; return semilla / 0x7fffffff; }
     // Con una carta grande (Pura Cepa: mil nodos) la disposición cuesta n²
@@ -1457,7 +1627,7 @@
     var CLAVE_RED = 'caracool-vinos-red';
     var firma = (function () { var h = 0, s = N.map(function (d) { return d.id; }).join('|') + '#2'; for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; } return String(h); }());
     function arranque() {
-      var np = 0; N.forEach(function (d, i) { masa[i] = 1 + Math.sqrt(d.c) * (d.t === 'p' ? 0.9 : d.t === 'z' ? 0.55 : 0.35); esP[i] = d.t === 'p' ? 1 : 0; if (d.t === 'p') { np++; } });
+      var np = 0; N.forEach(function (d) { if (d.t === 'p') { np++; } });
       var k = 0;
       N.forEach(function (d, i) {
         if (d.t !== 'p') { return; }
@@ -1577,7 +1747,7 @@
 
     /* — cámara — */
     var W = 0, Hh = 0, dpr = 1, cy, sy, cp, sp, S, cx, cyy;
-    var yaw = -0.35, pitch = 0.32, zoom = 0.85, vaiven = [0, 0], yawV = 0, pitchV = 0, giroObjetivo = null;
+    var yaw = -0.35, pitch = 0.32, zoom = 0.85, zoomObj = 0.85, vaiven = [0, 0], yawV = 0, pitchV = 0, giroObjetivo = null;
     var F0 = 3.5, ESCALA = 1.4, RADIO = 1.6;
     var mueve = !reducido;
     function medir() {
@@ -1601,6 +1771,8 @@
     function proyectar(p, salida) {
       var x = p[0] * cy + p[2] * sy, z = -p[0] * sy + p[2] * cy;
       var y = p[1] * cp - z * sp; z = p[1] * sp + z * cp;
+      // nada pasa por detrás de la cámara (lo que se abre al entrar en un país sale por los lados)
+      if (z > F0 - 0.45) { z = F0 - 0.45; }
       var e = F0 / (F0 - z);
       salida[0] = cx + x * S * e; salida[1] = cyy - y * S * e; salida[2] = z; salida[3] = e;
       return salida;
@@ -1633,7 +1805,7 @@
     N.forEach(function (d, k) { if (d.t === 'p' || d.t === 'z') { vis[k] = 1; visA[k] = 1; } });
     function calcularVis() {
       var activoVino = vinoActivo && porVino[vinoActivo.i] ? vinoActivo.i : -1;
-      var clave = seleccion + '|' + activoVino + '|' + (sobre < 0 ? sobreVino : -1) + '|' + versionPasan;
+      var clave = seleccion + '|' + activoVino + '|' + (sobre < 0 ? sobreVino : -1) + '|' + versionPasan + '|' + subRaiz;
       if (clave === visClave) { return; }
       visClave = clave;
       var nuevo = new Uint8Array(n);
@@ -1647,6 +1819,10 @@
       }
       var w = activoVino >= 0 ? porVino[activoVino] : (sobre < 0 && sobreVino >= 0 ? porVino[sobreVino] : null);
       if (w) { w.u.forEach(function (u) { nuevo[u] = 1; }); if (w.b >= 0) { nuevo[w.b] = 1; } }
+      // en la red de un país (o de una zona), solo lo suyo; y en la de una zona, todo lo suyo a la vista
+      if (subEn) {
+        for (var q = 0; q < n; q++) { if (!subEn[q]) { nuevo[q] = 0; } else if (N[subRaiz].t === 'z' && (!pasan || pasan[q])) { nuevo[q] = 1; } }
+      }
       vis = nuevo;
     }
     function animarVis(dt) {
@@ -1659,141 +1835,161 @@
       }
       return cambia;
     }
-    /* — el foco: al elegir un país o una zona, lo suyo se abre en una nube a
-       su alrededor. Un país: sus zonas cerca y sus uvas más lejos, cada uva
-       del lado de sus zonas para que los hilos se crucen poco. Una zona: sus
-       uvas cerca y sus bodegas más lejos. Hay un orden de fondo (lo que tiene
-       más vinos, más cerca; cada uno del lado donde estaba) y encima un azar
-       suave: cada punto a su distancia, con el ángulo algo movido, y la nube
-       algo ovalada para aprovechar el hueco libre. El azar sale del nombre de
-       cada punto, así que la nube de un país es siempre la misma. Luego unas
-       pasadas los separan para que nada se pise. Es una colocación en
-       pantalla, encima de la de la red: cada punto va desde su sitio hasta el
-       suyo en la nube, sigue al elegido si la red gira, y vuelve al quitar la
-       elección. — */
-    var focoC = -1, focoClave = null, focoZoom = 1, focoVivo = false, focoDt = 16, focoRX = 0, focoRY = 0;
-    var focoM = new Uint8Array(n), focoAX = new Float32Array(n), focoAY = new Float32Array(n), focoDX = new Float32Array(n), focoDY = new Float32Array(n);
-    // el sitio libre para la nube: el lienzo, menos el panel a la derecha en «el mundo»,
-    // y lo que ocupan los rótulos en los lados (a izquierda y derecha son largos)
-    var MARGEN_X = 110, MARGEN_Y = 34, focoArriba = 16;
-    // lo que tapa por arriba una cabecera fija que se superpone al lienzo (la de El Churra)
-    function medirArriba() {
-      focoArriba = 16;
-      if (!cabeceraEl) { return; }
-      var c = cabeceraEl.getBoundingClientRect(), l = lienzo.getBoundingClientRect();
-      if (getComputedStyle(cabeceraEl).position === 'fixed' && c.bottom > l.top) { focoArriba = Math.round(c.bottom - l.top) + 16; }
+    /* — la red de un país (Vinos 0.9.0): al elegir un país, la red pasa a
+       ser la de ese país, con el mismo motor, el mismo giro, la misma
+       respiración y la misma deriva que la general. Sus puntos (el país, sus
+       zonas, sus uvas y las bodegas de sus zonas) se colocan por fuerzas
+       entre ellos, como la general, y llenan el mismo espacio; lo demás se
+       apaga. Cada punto viaja desde su sitio en la general hasta el suyo en
+       la del país, y vuelve al quitar la elección. La disposición de cada
+       país se calcula una vez (empieza donde estaban sus puntos, así que
+       sale parecida a lo que se veía) y se guarda.
+       Con SUBRED_ZONA, una zona elegida también es su propia red (la zona,
+       sus uvas y sus bodegas); si no, una zona se resalta dentro de la red
+       de su país, como en la general. — */
+    var SUBRED_ZONA = /*SUBRED_ZONA*/false;
+    var focoC = -1, focoVivo = false, focoDt = 16, subRaiz = -1, subEn = null, subQ = null;
+    var focoM = new Uint8Array(n), focoCur = new Float32Array(n * 3), focoTiene = new Uint8Array(n);
+    var subCache = {}, ABIERTA = 1.35, TOPE = 1.8;
+    // los puntos de la red de un país o de una zona
+    function puntosDe(r) {
+      var en = new Uint8Array(n), lista = [];
+      function poner(j) { if (!en[j]) { en[j] = 1; lista.push(j); } }
+      poner(r);
+      if (N[r].t === 'p') {
+        vecinos[r].forEach(function (z) { if (N[z].t !== 'z') { return; } poner(z); uvasDe[z].forEach(poner); bodegasDe[z].forEach(poner); });
+      } else { uvasDe[r].forEach(poner); bodegasDe[r].forEach(poner); }
+      return { en: en, lista: lista };
     }
-    function cajaFoco() {
-      var mundo = diseno() === 'mundo', movil = window.innerWidth <= 900;
-      return [16, focoArriba, (mundo && !movil) ? W * 0.585 - 16 : W - 16, Hh - 16];
-    }
-    function margenX() { return window.innerWidth <= 900 ? 64 : MARGEN_X; }
-    function mediaAngular(lista) { var sx = 0, sy = 0; lista.forEach(function (a) { sx += Math.cos(a); sy += Math.sin(a); }); return Math.atan2(sy, sx); }
-    // el rótulo, hacia fuera de la nube
-    function ladoDe(a) { var c = Math.cos(a), s = Math.sin(a); if (c > 0.42) { return 0; } if (c < -0.42) { return 1; } return s < 0 ? 2 : 3; }
-    // un número entre 0 y 1 que sale siempre igual para el mismo texto
-    function azarDe(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 100000) / 100000; }
-    // reparte una lista (ordenada por el ángulo que prefiere cada uno) alrededor, entre
-    // dos distancias: girada para que cada uno quede cerca de donde quería, con el
-    // ángulo algo movido y cada uno a su distancia (más cerca lo que tiene más vinos)
-    function repartir(lista, pref, u0, u1, ex, ey, sal) {
-      var m = lista.length; if (!m) { return; }
-      var paso = 2 * Math.PI / m, giro = mediaAngular(lista.map(function (j, i) { return pref[j] - i * paso; }));
-      var porPeso = lista.slice().sort(function (a, b) { return N[b].c - N[a].c; }), puesto = {};
-      porPeso.forEach(function (j, i) { puesto[j] = m > 1 ? i / (m - 1) : 0.5; });
-      var semilla = N[focoC].id + '>';
-      lista.forEach(function (j, i) {
-        var r1 = azarDe(semilla + N[j].id + '#a'), r2 = azarDe(semilla + N[j].id + '#r');
-        var a = giro + i * paso + (r1 - 0.5) * paso * 1.15;
-        var u = u0 + (u1 - u0) * (0.45 * puesto[j] + 0.55 * r2);
-        focoAX[j] = Math.cos(a) * u * ex; focoAY[j] = Math.sin(a) * u * ey; focoM[j] = 1;
-        sal.push(j);
-      });
-    }
-    // unas pasadas para que nada se pise (los rótulos van a los lados: en horizontal hace falta más sitio)
-    function separar(lista, ex, ey) {
-      var m = lista.length, MIN = 17, ANCHO = 1.9, CENTRO = 50;
-      for (var it = 0; it < 70; it++) {
-        var movido = false;
-        for (var a = 0; a < m; a++) {
-          var i = lista[a];
-          for (var b = a + 1; b < m; b++) {
-            var j = lista[b], dx = (focoAX[j] - focoAX[i]) / ANCHO, dy = focoAY[j] - focoAY[i], d = Math.sqrt(dx * dx + dy * dy);
-            if (d >= MIN) { continue; }
-            if (d < 0.01) { dx = 0.7; dy = 0.7; d = 1; }
-            var emp = (MIN - d) / 2 / d;
-            focoAX[i] -= dx * emp * ANCHO; focoAY[i] -= dy * emp; focoAX[j] += dx * emp * ANCHO; focoAY[j] += dy * emp; movido = true;
+    // su disposición: las mismas fuerzas que la general, solo entre ellos, y escalada para llenar el mismo espacio
+    function disponer(r) {
+      if (subCache[r]) { return subCache[r]; }
+      var pd = puntosDe(r), L2 = pd.lista, m = L2.length, idx = {}, i, j, e;
+      L2.forEach(function (k, a) { idx[k] = a; });
+      var X = new Float32Array(m * 3), G = new Float32Array(m * 3), M = new Float32Array(m), Ea = [], Eb = [], El = [];
+      var sem = 0x5f3759df ^ r;
+      function az() { sem = (sem * 1103515245 + 12345) & 0x7fffffff; return sem / 0x7fffffff; }
+      // los hilos, algo más largos que en la general: la red de un país, más suelta
+      for (e = 0; e < H.length; e++) { var a = idx[H[e][0]], b = idx[H[e][1]]; if (a !== undefined && b !== undefined) { Ea.push(a); Eb.push(b); El.push(L[e] * 1.3); } }
+      // de dónde arranca: no depende de la forma que tomó la general en cada navegador (la guardada
+      // puede venir de otra versión), así la red de un país sale igual en todos. El elegido en el
+      // centro, sus zonas repartidas a su alrededor y cada uva o bodega junto a sus zonas, más afuera
+      var nz = 0, kz = 0, i0;
+      for (i = 1; i < m; i++) { if (N[L2[i]].t === 'z') { nz++; } }
+      X[0] = X[1] = X[2] = 0; M[0] = masa[L2[0]];
+      for (i = 1; i < m; i++) {
+        M[i] = masa[L2[i]];
+        if (N[L2[i]].t !== 'z') { continue; }
+        var fi = Math.acos(1 - 2 * (kz + 0.5) / nz), th = Math.PI * (1 + Math.sqrt(5)) * kz, rz = 0.55 * (0.9 + az() * 0.2); kz++;
+        X[i * 3] = rz * Math.sin(fi) * Math.cos(th); X[i * 3 + 1] = rz * Math.sin(fi) * Math.sin(th); X[i * 3 + 2] = rz * Math.cos(fi);
+      }
+      var sx = new Float32Array(m * 3), sn = new Uint16Array(m);
+      for (e = 0; e < Ea.length; e++) {
+        var za = N[L2[Ea[e]]].t === 'z', zb = N[L2[Eb[e]]].t === 'z';
+        if (za && !zb) { i0 = Eb[e]; sx[i0 * 3] += X[Ea[e] * 3]; sx[i0 * 3 + 1] += X[Ea[e] * 3 + 1]; sx[i0 * 3 + 2] += X[Ea[e] * 3 + 2]; sn[i0]++; }
+        else if (zb && !za) { i0 = Ea[e]; sx[i0 * 3] += X[Eb[e] * 3]; sx[i0 * 3 + 1] += X[Eb[e] * 3 + 1]; sx[i0 * 3 + 2] += X[Eb[e] * 3 + 2]; sn[i0]++; }
+      }
+      for (i = 1; i < m; i++) {
+        if (N[L2[i]].t === 'z') { continue; }
+        var vx = sx[i * 3] + (az() - 0.5) * 0.5, vy = sx[i * 3 + 1] + (az() - 0.5) * 0.5, vz = sx[i * 3 + 2] + (az() - 0.5) * 0.5;
+        var vl = Math.sqrt(vx * vx + vy * vy + vz * vz) + 1e-6, rr = 1.1 * (0.85 + az() * 0.3);
+        X[i * 3] = vx / vl * rr; X[i * 3 + 1] = vy / vl * rr; X[i * 3 + 2] = vz / vl * rr;
+      }
+      var PS = m > 400 ? 220 : 320;
+      for (var ps = 0; ps < PS; ps++) {
+        var temp = 0.09 * Math.pow(1 - ps / PS, 1.4) + 0.002;
+        G.fill(0);
+        for (i = 0; i < m; i++) {
+          var xi = X[i * 3], yi = X[i * 3 + 1], zi = X[i * 3 + 2], mi = M[i];
+          for (j = i + 1; j < m; j++) {
+            var dx = xi - X[j * 3], dy = yi - X[j * 3 + 1], dz = zi - X[j * 3 + 2], d2 = dx * dx + dy * dy + dz * dz + 1e-6;
+            if (d2 > 10.24) { continue; }
+            var dd = Math.sqrt(d2), rp = mi * M[j] * 0.06 / Math.max(d2, 0.02) / dd;
+            G[i * 3] += dx * rp; G[i * 3 + 1] += dy * rp; G[i * 3 + 2] += dz * rp; G[j * 3] -= dx * rp; G[j * 3 + 1] -= dy * rp; G[j * 3 + 2] -= dz * rp;
           }
-          // ni encima del elegido ni fuera de la nube
-          var qx = focoAX[i] / 1.6, qy = focoAY[i], dc = Math.sqrt(qx * qx + qy * qy);
-          if (dc < CENTRO) { var k = CENTRO / Math.max(dc, 0.01); focoAX[i] *= k; focoAY[i] *= k; movido = true; }
-          var e = (focoAX[i] / ex) * (focoAX[i] / ex) + (focoAY[i] / ey) * (focoAY[i] / ey);
-          if (e > 1) { var s = 1 / Math.sqrt(e); focoAX[i] *= s; focoAY[i] *= s; }
         }
-        if (!movido) { break; }
+        for (e = 0; e < Ea.length; e++) {
+          var aa = Ea[e], bb = Eb[e], ex = X[bb * 3] - X[aa * 3], ey = X[bb * 3 + 1] - X[aa * 3 + 1], ez = X[bb * 3 + 2] - X[aa * 3 + 2];
+          var le = Math.sqrt(ex * ex + ey * ey + ez * ez) + 1e-6, fm = (le - El[e]) * 0.9 / le;
+          G[aa * 3] += ex * fm; G[aa * 3 + 1] += ey * fm; G[aa * 3 + 2] += ez * fm; G[bb * 3] -= ex * fm; G[bb * 3 + 1] -= ey * fm; G[bb * 3 + 2] -= ez * fm;
+        }
+        for (i = 0; i < m; i++) {
+          var g = i === 0 ? 0.02 : 0.012; G[i * 3] -= X[i * 3] * g; G[i * 3 + 1] -= X[i * 3 + 1] * g; G[i * 3 + 2] -= X[i * 3 + 2] * g;
+          var nf = Math.sqrt(G[i * 3] * G[i * 3] + G[i * 3 + 1] * G[i * 3 + 1] + G[i * 3 + 2] * G[i * 3 + 2]) + 1e-9, sc = Math.min(nf, temp) / nf;
+          X[i * 3] += G[i * 3] * sc; X[i * 3 + 1] += G[i * 3 + 1] * sc; X[i * 3 + 2] += G[i * 3 + 2] * sc;
+        }
       }
-    }
-    function recalcFoco() {
-      focoM.fill(0); focoC = -1;
-      var c = seleccion;
-      if (c < 0 || (N[c].t !== 'p' && N[c].t !== 'z')) { return; }
-      focoC = c; focoZoom = zoom;
-      var d = N[c], vale = function (j) { return !pasan || pasan[j]; };
-      var dentro = d.t === 'p' ? vecinos[c].filter(function (j) { return N[j].t === 'z'; }) : uvasDe[c].filter(vale);
-      var fuera = d.t === 'p' ? uvasDe[c].filter(vale) : bodegasDe[c].filter(vale);
-      var ox = Pp[c][0], oy = Pp[c][1], pref = {};
-      dentro.forEach(function (j) { pref[j] = Math.atan2(Pp[j][1] - oy, Pp[j][0] - ox); });
-      dentro.sort(function (a, b) { return pref[a] - pref[b]; });
-      // el tamaño de la nube: lo que pida lo que hay, hasta lo que quepa; algo más
-      // ancha que alta (los rótulos van a los lados), salvo en un hueco estrecho y alto
-      medirArriba();
-      var cj = cajaFoco(), libreX = Math.max(90, (cj[2] - cj[0]) / 2 - margenX()), libreY = Math.max(90, (cj[3] - cj[1]) / 2 - MARGEN_Y);
-      var pide = Math.max(130, Math.sqrt(dentro.length + fuera.length) * 37);
-      var ex = Math.min(libreX, pide * 1.25), ey = Math.min(libreY, pide * 0.95);
-      if (libreY > libreX * 1.4) { ey = Math.min(libreY, pide * 1.2); }
-      focoRX = ex; focoRY = ey;
-      var todos = [];
-      if (!fuera.length) { repartir(dentro, pref, 0.38, 1, ex, ey, todos); separar(todos, ex, ey); }
-      else {
-        repartir(dentro, pref, 0.26, 0.58, ex, ey, todos);
-        separar(todos, ex * 0.66, ey * 0.66);
-        var pref2 = {};
-        fuera.forEach(function (j) {
-          // una uva de un país, del lado de sus zonas; lo demás, donde estaba
-          var vs = d.t === 'p' ? zonasDe[j].filter(function (z) { return focoM[z]; }).map(function (z) { return Math.atan2(focoAY[z], focoAX[z]); }) : [];
-          pref2[j] = vs.length ? mediaAngular(vs) : Math.atan2(Pp[j][1] - oy, Pp[j][0] - ox);
-        });
-        fuera.sort(function (a, b) { return pref2[a] - pref2[b]; });
-        repartir(fuera, pref2, 0.68, 1, ex, ey, todos);
-        separar(todos, ex, ey);
+      // centrada y escalada bien abierta: el grueso (nueve de cada diez puntos) llega más allá del borde
+      // de la general; lo que se salga se ve girando o con el zoom
+      var cx = 0, cy = 0, cz = 0, rs = [];
+      for (i = 0; i < m; i++) { cx += X[i * 3]; cy += X[i * 3 + 1]; cz += X[i * 3 + 2]; }
+      cx /= m; cy /= m; cz /= m;
+      for (i = 0; i < m; i++) { X[i * 3] -= cx; X[i * 3 + 1] -= cy; X[i * 3 + 2] -= cz; rs.push(Math.sqrt(X[i * 3] * X[i * 3] + X[i * 3 + 1] * X[i * 3 + 1] + X[i * 3 + 2] * X[i * 3 + 2])); }
+      var orden2 = rs.slice().sort(function (a, b) { return a - b; }), r90 = Math.max(1e-6, orden2[Math.min(m - 1, Math.floor(m * 0.9))]);
+      var Q = new Float32Array(n * 3);
+      for (i = 0; i < m; i++) {
+        // lo que queda muy lejos se recoge un poco (sin pasar de TOPE): bien abierta, pero sin que nada
+        // llegue a pegarse a la cámara
+        var kk = L2[i], ri = rs[i] * ABIERTA / r90, rf = ri <= ABIERTA ? ri : ABIERTA + (TOPE - ABIERTA) * Math.tanh((ri - ABIERTA) / (TOPE - ABIERTA)), f = rs[i] > 1e-9 ? rf / rs[i] : 0;
+        Q[kk * 3] = X[i * 3] * f; Q[kk * 3 + 1] = X[i * 3 + 1] * f; Q[kk * 3 + 2] = X[i * 3 + 2] * f;
       }
-      todos.forEach(function (j) { rot[j].lado = ladoDe(Math.atan2(focoAY[j], focoAX[j])); });
+      subCache[r] = { en: pd.en, Q: Q };
+      return subCache[r];
     }
-    // cada cuadro, después de proyectar: cada punto se acerca a su sitio en la nube (o vuelve al suyo)
-    function aplicarFoco() {
+    // qué red toca según lo elegido: la de un país, la de una zona (con SUBRED_ZONA) o la general
+    function raizDe(sel) {
+      if (sel < 0) { return -1; }
+      var d = N[sel];
+      if (d.t === 'p') { return sel; }
+      if (d.t === 'z') { return SUBRED_ZONA ? sel : (padre[sel] >= 0 ? padre[sel] : -1); }
+      // una uva o una bodega: se sigue en la red que hubiera si está en ella
+      return (subRaiz >= 0 && subEn && subEn[sel]) ? subRaiz : -1;
+    }
+    var subClave = null;
+    function prepararFoco() {
       var clave = seleccion + '|' + versionPasan;
-      if (clave !== focoClave) { focoClave = clave; recalcFoco(); }
-      focoVivo = false;
-      var hay = focoC >= 0, kz = hay ? zoom / focoZoom : 1, suave = reducido ? 1 : 1 - Math.exp(-focoDt / 170);
-      var fx = hay ? Pp[focoC][0] : 0, fy = hay ? Pp[focoC][1] : 0, fz = hay ? Pp[focoC][2] : 0, fe = hay ? Pp[focoC][3] : 1;
-      if (hay) {
-        // el elegido se queda donde está si su nube cabe; si no, se aparta lo justo para que quepa entera
-        var cj = cajaFoco(), mx = margenX() + focoRX * kz, my = MARGEN_Y + focoRY * kz;
-        fx = (cj[2] - cj[0] > 2 * mx) ? Math.min(Math.max(fx, cj[0] + mx), cj[2] - mx) : (cj[0] + cj[2]) / 2;
-        fy = (cj[3] - cj[1] > 2 * my) ? Math.min(Math.max(fy, cj[1] + my), cj[3] - my) : (cj[1] + cj[3]) / 2;
+      if (clave === subClave) { return; }
+      subClave = clave;
+      focoC = (seleccion >= 0 && (N[seleccion].t === 'p' || N[seleccion].t === 'z')) ? seleccion : -1;
+      var r = raizDe(seleccion);
+      focoM.fill(0);
+      if (r < 0) { subRaiz = -1; subEn = null; subQ = null; visClave = null; return; }
+      var c = disponer(r);
+      if (subRaiz !== r) { visClave = null; }
+      subRaiz = r; subEn = c.en; subQ = c.Q;
+      for (var k = 0; k < n; k++) { if (subEn[k] && k !== r) { focoM[k] = 1; } }
+    }
+    // dónde está el punto k en el espacio este cuadro: su sitio en la red, con la respiración y la deriva
+    function qDe(k, q, amp) {
+      var j = k * 6, px = P[k * 3], py = P[k * 3 + 1], pz = P[k * 3 + 2];
+      var al = mueve ? aliento(reloj, Math.sqrt(px * px + py * py + pz * pz)) : 0.5;
+      alientoN[k] = al;
+      var es = ESCALA * (1 + (mueve ? ALIENTO : 0) * (al * 2 - 1));
+      q[0] = px * es + amp * Math.sin(reloj * deriva[j + 3] + deriva[j]);
+      q[1] = py * es + amp * Math.sin(reloj * deriva[j + 4] + deriva[j + 1]);
+      q[2] = pz * es + amp * Math.sin(reloj * deriva[j + 5] + deriva[j + 2]);
+      return es;
+    }
+    // un punto de la red de un país: su sitio en ella (con su respiración y su deriva), y el viaje hasta él o de vuelta.
+    // Lo que no es del país se abre hacia fuera desde él mientras se apaga, como al acercarse: se entra en el país
+    var ABRIR = 2.6;
+    function enSubred(k, q, es, suave) {
+      var m = subEn && subEn[k], fuera = subEn && !subEn[k];
+      if (!m && !fuera && !focoTiene[k]) { return; }
+      var o = k * 3, tx = q[0], ty = q[1], tz = q[2];
+      if (fuera) {
+        var r3 = subRaiz * 3, rx = P[r3] * es, ry = P[r3 + 1] * es, rz = P[r3 + 2] * es;
+        tx = rx + (q[0] - rx) * ABRIR; ty = ry + (q[1] - ry) * ABRIR; tz = rz + (q[2] - rz) * ABRIR;
+      } else if (m) {
+        var qx = subQ[o], qy = subQ[o + 1], qz = subQ[o + 2];
+        var al = mueve ? aliento(reloj, Math.sqrt(qx * qx + qy * qy + qz * qz)) : 0.5, es2 = ESCALA * (1 + (mueve ? ALIENTO : 0) * (al * 2 - 1));
+        tx = qx * es2 + (q[0] - P[o] * es); ty = qy * es2 + (q[1] - P[o + 1] * es); tz = qz * es2 + (q[2] - P[o + 2] * es);
       }
-      for (var k = 0; k < n; k++) {
-        var tx = 0, ty = 0, m = hay && focoM[k];
-        if (m) { tx = fx + focoAX[k] * kz - Pp[k][0]; ty = fy + focoAY[k] * kz - Pp[k][1]; }
-        else if (hay && k === focoC) { tx = fx - Pp[k][0]; ty = fy - Pp[k][1]; }
-        var ddx = tx - focoDX[k], ddy = ty - focoDY[k];
-        if (ddx || ddy) {
-          if (Math.abs(ddx) + Math.abs(ddy) < 0.6) { focoDX[k] = tx; focoDY[k] = ty; }
-          else { focoDX[k] += ddx * suave; focoDY[k] += ddy * suave; focoVivo = true; }
-        }
-        if (focoDX[k] || focoDY[k]) { Pp[k][0] += focoDX[k]; Pp[k][1] += focoDY[k]; }
-        if (m) { Pp[k][2] = Math.max(Pp[k][2], fz); Pp[k][3] = fe; }
-      }
+      if (!focoTiene[k]) { focoCur[o] = q[0]; focoCur[o + 1] = q[1]; focoCur[o + 2] = q[2]; focoTiene[k] = 1; }
+      focoCur[o] += (tx - focoCur[o]) * suave; focoCur[o + 1] += (ty - focoCur[o + 1]) * suave; focoCur[o + 2] += (tz - focoCur[o + 2]) * suave;
+      var falta = Math.abs(tx - focoCur[o]) + Math.abs(ty - focoCur[o + 1]) + Math.abs(tz - focoCur[o + 2]);
+      if (falta < 0.0015) { focoCur[o] = tx; focoCur[o + 1] = ty; focoCur[o + 2] = tz; if (!m && !fuera) { focoTiene[k] = 0; } } else if (!fuera || visA[k] > 0.01) { focoVivo = true; }
+      q[0] = focoCur[o]; q[1] = focoCur[o + 1]; q[2] = focoCur[o + 2];
     }
     // lo que dicen los filtros: qué nodo está elegido y qué nodos tienen algún vino que pase
     function actualizar() {
@@ -1802,7 +1998,7 @@
       else if (filtro.bodega && indice['b:' + filtro.bodega] !== undefined) { seleccion = indice['b:' + filtro.bodega]; }
       else if (filtro.zona) { var zid = Object.keys(indice).filter(function (k) { return k.indexOf('z:') === 0 && k.split('|')[1] === filtro.zona; })[0]; if (zid) { seleccion = indice[zid]; } }
       else if (filtro.pais && indice['p:' + filtro.pais] !== undefined) { seleccion = indice['p:' + filtro.pais]; }
-      var hayFiltro = filtro.tipo || filtro.uva || filtro.bodega || filtro.zona || filtro.pais || filtro.precio || filtro.parker || filtro.texto || filtro.mis || filtro.top;
+      var hayFiltro = filtro.tipo || filtro.uva || filtro.bodega || filtro.zona || filtro.pais || filtro.precio || filtro.parker || filtro.penin || filtro.texto || filtro.mis || filtro.top;
       pasan = null;
       if (hayFiltro) {
         pasan = {};
@@ -1810,7 +2006,7 @@
       }
       versionPasan++;
       if (sobre >= 0) { ponerTip(sobre); }
-      if (seleccion >= 0 && activo) { encarar(seleccion); }
+      if (seleccion >= 0 && activo && raizDe(seleccion) < 0) { encarar(seleccion); }
       pedir();
     }
 
@@ -1849,6 +2045,10 @@
         else { yawV = pitchV = 0; }
       }
       pitch = Math.max(-1.2, Math.min(1.2, pitch));
+      if (zoom !== zoomObj) {
+        if (reducido || Math.abs(zoomObj - zoom) < 0.0008) { zoom = zoomObj; }
+        else { zoom += (zoomObj - zoom) * (1 - Math.exp(-dt / 70)); vivo = true; }
+      }
       // el universo nunca se para del todo: la cámara se balancea unos grados y vuelve
       if (mueve) { vaiven[0] = 0.085 * Math.sin(ahora / 4100); vaiven[1] = 0.03 * Math.sin(ahora / 5600 + 1.3); vivo = true; }
       else if (Math.abs(vaiven[0]) + Math.abs(vaiven[1]) > 0.0005) { vaiven[0] *= 0.94; vaiven[1] *= 0.94; vivo = true; }
@@ -1875,18 +2075,15 @@
       ctx.clearRect(0, 0, W, Hh);
       pintarPolvo();
       var k, j, amp = mueve ? AMP : 0;
+      prepararFoco();
+      focoVivo = false;
+      var suaveF = reducido ? 1 : 1 - Math.exp(-(focoDt || 16) / 230);
       for (k = 0; k < n; k++) {
-        var q = pos[k]; j = k * 6;
-        var px = P[k * 3], py = P[k * 3 + 1], pz = P[k * 3 + 2];
-        var al = mueve ? aliento(reloj, Math.sqrt(px * px + py * py + pz * pz)) : 0.5;
-        alientoN[k] = al;
-        var es = ESCALA * (1 + (mueve ? ALIENTO : 0) * (al * 2 - 1));
-        q[0] = px * es + amp * Math.sin(reloj * deriva[j + 3] + deriva[j]);
-        q[1] = py * es + amp * Math.sin(reloj * deriva[j + 4] + deriva[j + 1]);
-        q[2] = pz * es + amp * Math.sin(reloj * deriva[j + 5] + deriva[j + 2]);
+        var q = pos[k];
+        var es = qDe(k, q, amp);
+        enSubred(k, q, es, suaveF);
         proyectar(q, Pp[k]);
       }
-      aplicarFoco();
       var resalte = resalteActual();
       if (pal.noche) { pintarNebulosas(resalte); }
       pintarHilos(resalte);
@@ -2115,10 +2312,14 @@
     // la rueda sobre la red acerca; sobre el panel, sigue moviendo la lista
     lienzo.addEventListener('wheel', function (ev) {
       ev.preventDefault(); ev.stopPropagation();
-      zoom = Math.max(0.45, Math.min(3.2, zoom * (ev.deltaY < 0 ? 1.08 : 0.926))); pedir();
+      // cuenta cuánto se mueve (un trackpad da pasos pequeños; una rueda, grandes), con tope por golpe
+      var d = ev.deltaY * (ev.deltaMode === 1 ? 16 : (ev.deltaMode === 2 ? 400 : 1));
+      d = Math.max(-120, Math.min(120, d));
+      zoomObj = Math.max(0.45, Math.min(3.2, zoomObj * Math.exp(-d * 0.0018))); pedir();
     }, { passive: false });
-    document.getElementById('cv-red-mas').addEventListener('click', function () { zoom = Math.min(3.2, zoom * 1.25); pedir(); });
-    document.getElementById('cv-red-menos').addEventListener('click', function () { zoom = Math.max(0.45, zoom / 1.25); pedir(); });
+    // el zoom no salta: los botones y la rueda marcan a dónde ir y la red llega suave, cuadro a cuadro
+    document.getElementById('cv-red-mas').addEventListener('click', function () { zoomObj = Math.min(3.2, zoomObj * 1.25); pedir(); });
+    document.getElementById('cv-red-menos').addEventListener('click', function () { zoomObj = Math.max(0.45, zoomObj / 1.25); pedir(); });
     var moverBtn = document.getElementById('cv-red-mover');
     moverBtn.classList.toggle('on', mueve); moverBtn.setAttribute('aria-pressed', mueve ? 'true' : 'false');
     moverBtn.addEventListener('click', function () { mueve = !mueve; moverBtn.classList.toggle('on', mueve); moverBtn.setAttribute('aria-pressed', mueve ? 'true' : 'false'); pedir(); });

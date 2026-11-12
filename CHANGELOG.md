@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.9.18 · 12 de noviembre de 2026
+
+- **El mundo vuelve a girar con el ratón encima.** En la 0.9.17, pasar el
+  ratón por el globo lo paraba también en la vista del mundo entero. Ahora
+  la pausa solo se aplica con un país, una zona o un vino elegido: ahí el
+  globo se queda quieto mientras el ratón esté encima y durante cinco
+  segundos al llegar. En la vista general gira siempre, y al volver a ella
+  arranca otra vez a los dos segundos y medio.
+
 ## 0.9.17 · 12 de noviembre de 2026
 
 - **El globo se queda quieto al llegar a un país.** Al pinchar en un país o

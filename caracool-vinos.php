@@ -3,7 +3,7 @@
  * Plugin Name:  Caracool Vinos
  * Plugin URI:   https://github.com/caracoolnet/wp-caracool-vinos
  * Description:  La carta de vinos de un restaurante, publicada como una página que se filtra por tipo, uva, bodega, zona y precio, con un globo que gira hasta la zona de cada vino y una red de países, zonas, bodegas y uvas. La carta la lee y la publica Caracool en Bodega; esta web la recibe con su licencia.
- * Version:           0.8.5
+ * Version:           0.9.17
  * Author:       Caracool
  * Author URI:   https://caracool.net
  * License:      GPL-2.0-or-later
@@ -45,7 +45,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CARACOOL_VINOS_VERSION', '0.8.5' );
+define( 'CARACOOL_VINOS_VERSION', '0.9.17' );
 define( 'CARACOOL_VINOS_FILE', __FILE__ );
 define( 'CARACOOL_VINOS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CARACOOL_VINOS_URL', plugin_dir_url( __FILE__ ) );
@@ -53,6 +53,7 @@ define( 'CARACOOL_VINOS_REPO', 'caracoolnet/wp-caracool-vinos' );
 
 require_once CARACOOL_VINOS_DIR . 'inc/caracool-menu.php';
 require_once CARACOOL_VINOS_DIR . 'inc/caracool-licencia.php';
+require_once CARACOOL_VINOS_DIR . 'inc/caracool-actualizador.php';
 
 final class Caracool_Vinos {
 
@@ -72,8 +73,6 @@ final class Caracool_Vinos {
 		add_filter( 'caracool_plugins', array( $this, 'presentarse' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'enlace_ajustes' ) );
 
-		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_update' ) );
-		add_filter( 'plugins_api', array( $this, 'update_details' ), 10, 3 );
 	}
 
 	/** El pie de la lista que venía de fábrica hasta la 0.7.0; desde la 0.7.1 es «IVA incluido». */
@@ -370,110 +369,28 @@ final class Caracool_Vinos {
 		}
 		return $svg . '</svg>';
 	}
-
-	// ── Comprobador de actualizaciones contra las releases de GitHub ────
-
-	private function ultima_release() {
-		$cache = get_site_transient( 'caracool_vinos_release' );
-		if ( is_array( $cache ) ) {
-			return $cache;
-		}
-
-		$r = wp_remote_get(
-			'https://api.github.com/repos/' . CARACOOL_VINOS_REPO . '/releases/latest',
-			array(
-				'timeout' => 8,
-				'headers' => array( 'Accept' => 'application/vnd.github+json' ),
-			)
-		);
-
-		if ( is_wp_error( $r ) || 200 !== wp_remote_retrieve_response_code( $r ) ) {
-			set_site_transient( 'caracool_vinos_release', array(), 30 * MINUTE_IN_SECONDS );
-			return array();
-		}
-
-		$data = json_decode( wp_remote_retrieve_body( $r ), true );
-		if ( ! is_array( $data ) ) {
-			$data = array();
-		}
-
-		set_site_transient( 'caracool_vinos_release', $data, 6 * HOUR_IN_SECONDS );
-		return $data;
-	}
-
-	public function check_update( $transient ) {
-		if ( empty( $transient->checked ) ) {
-			return $transient;
-		}
-
-		$rel = $this->ultima_release();
-		if ( empty( $rel['tag_name'] ) ) {
-			return $transient;
-		}
-
-		$nueva = ltrim( $rel['tag_name'], 'vV' );
-		if ( version_compare( $nueva, CARACOOL_VINOS_VERSION, '<=' ) ) {
-			return $transient;
-		}
-
-		$zip = '';
-		if ( ! empty( $rel['assets'][0]['browser_download_url'] ) ) {
-			$zip = $rel['assets'][0]['browser_download_url'];
-		} elseif ( ! empty( $rel['zipball_url'] ) ) {
-			$zip = $rel['zipball_url'];
-		}
-
-		$slug = plugin_basename( CARACOOL_VINOS_FILE );
-
-		$item              = new stdClass();
-		$item->slug        = 'caracool-vinos';
-		$item->plugin      = $slug;
-		$item->new_version = $nueva;
-		$item->url         = 'https://github.com/' . CARACOOL_VINOS_REPO;
-		$item->package     = $zip;
-		$item->tested      = get_bloginfo( 'version' );
-
-		$transient->response[ $slug ] = $item;
-
-		return $transient;
-	}
-
-	public function update_details( $res, $action, $args ) {
-		if ( 'plugin_information' !== $action || empty( $args->slug ) || 'caracool-vinos' !== $args->slug ) {
-			return $res;
-		}
-
-		$rel = $this->ultima_release();
-		if ( empty( $rel['tag_name'] ) ) {
-			return $res;
-		}
-
-		$info               = new stdClass();
-		$info->name         = 'Caracool Vinos';
-		$info->slug         = 'caracool-vinos';
-		$info->version      = ltrim( $rel['tag_name'], 'vV' );
-		$info->author       = '<a href="https://caracool.net">Caracool</a>';
-		$info->homepage     = 'https://github.com/' . CARACOOL_VINOS_REPO;
-		$info->sections     = array(
-			'description' => 'La carta de vinos de un restaurante, leída del Word que ya edita el propio restaurante, con filtros y un globo que gira hasta la zona de cada vino.',
-			'changelog'   => isset( $rel['body'] ) ? nl2br( esc_html( $rel['body'] ) ) : '',
-		);
-		$info->download_link = ! empty( $rel['assets'][0]['browser_download_url'] )
-			? $rel['assets'][0]['browser_download_url']
-			: ( isset( $rel['zipball_url'] ) ? $rel['zipball_url'] : '' );
-
-		return $info;
-	}
 }
 
 new Caracool_Vinos();
+
+// ── Actualizaciones: las da Caracool Central con la licencia de la web ──
+// (inc/caracool-actualizador.php, común a todos los plugins de la casa)
+caracool_actualizador_v2(
+	array(
+		'archivo' => CARACOOL_VINOS_FILE,
+		'slug'    => 'vinos',
+		'version' => CARACOOL_VINOS_VERSION,
+		'repo'    => CARACOOL_VINOS_REPO,
+		'nombre'  => 'Caracool Vinos',
+		'resumen' => 'La carta de vinos de un restaurante, con filtros y un globo que gira hasta la zona de cada vino.',
+	)
+);
 
 // ── Desactivación ───────────────────────────────────────────────────────
 
 register_deactivation_hook(
 	__FILE__,
 	function () {
-		delete_site_transient( 'caracool_vinos_release' );
 		if ( class_exists( 'Caracool_Vinos_Conexion' ) ) {
 			Caracool_Vinos_Conexion::desprogramar();
 		}

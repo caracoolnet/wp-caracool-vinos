@@ -1,5 +1,207 @@
 # Cambios
 
+## 0.9.17 · 12 de noviembre de 2026
+
+- **El globo se queda quieto al llegar a un país.** Al pinchar en un país o
+  en una zona, el globo no se mueve durante cinco segundos después de
+  llegar, para poder pinchar en una zona sin que se escape. Con el ratón
+  encima del globo tampoco se mueve. Cuando nadie lo toca, empieza a
+  balancearse como antes.
+- **El balanceo va fluido.** Antes, cada vez que se movía, se volvía a
+  dibujar el mapa entero, con la costa en detalle. En un ordenador normal
+  no daba tiempo y el globo iba a saltos. Ahora se desplazan las capas del
+  globo en pantalla, con decimales, sin volver a dibujarlas. Va fino y
+  gasta muy poco. Los clics siguen cayendo en su sitio, porque la posición
+  del mapa no cambia.
+- Al pinchar o arrastrar mientras se balancea, el globo sale de donde se
+  ve, sin dar un salto.
+
+## 0.9.16 · 30 de octubre de 2026
+
+- **Actualizaciones firmadas.** Lleva el actualizador común 1.1.0. Antes de
+  instalar una versión nueva, comprueba que el zip viene firmado por
+  Caracool; si alguien lo hubiera cambiado por el camino, no se instala. En
+  Caracool → Licencia, la licencia sale recortada y no entera.
+- En Vinos → Conexión pasa lo mismo: la licencia sale recortada y el campo
+  queda vacío, para pegar una nueva solo si hay que cambiarla. Para quitarla
+  hay un botón aparte.
+
+## 0.9.15 · 29 de octubre de 2026
+
+- **Actualizaciones desde Caracool Central.** El plugin ya no pregunta a
+  GitHub por su cuenta: lleva el actualizador común de la casa
+  (`inc/caracool-actualizador.php`), que pregunta a Caracool Central
+  (updates.caracool.net) con la licencia de la web y le da el zip. Así los
+  repositorios pueden ser privados. La licencia se pega una vez en el menú
+  Caracool → Licencia y vale para todos los plugins de la casa. Mientras la
+  web no tenga licencia, pregunta a GitHub como antes.
+
+## 0.9.14 · 28 de octubre de 2026
+
+- **Una o dos columnas, por carta.** Bodega 0.7.1 decide en la pestaña
+  Diseño de cada cliente cómo va la lista sola en pantalla ancha: dos
+  columnas (los filtros a la izquierda, lo de fábrica) o una (los filtros
+  encima). Llega como `lista` con el diseño y el bloque lleva
+  `data-lista`. Sin decir nada, dos columnas.
+- **«Ayúdame a elegir» con la letra y las esquinas de otra web.** Las
+  baldosas toman las esquinas de los campos de la web con un tope de 24 px:
+  una web con campos en cápsula (Por Herencia, 999 px) las volvía círculos
+  y cortaba el texto. El nombre y la cuenta se quedan a la izquierda de la
+  botella y, si con una letra ancha una palabra no cabe, el nombre baja de
+  tamaño hasta que cabe (18 px como mucho). Con la letra de El Churra, igual
+  que antes.
+
+## 0.9.13 · 28 de octubre de 2026
+
+- **La lista a dos columnas, alineada.** El primer apartado empieza a la
+  altura de los botones de tipo: sin el aire de arriba de la lista ni el
+  que separa un apartado del anterior. Los demás apartados siguen igual.
+
+## 0.9.12 · 28 de octubre de 2026
+
+- **El nombre del vino en la ficha, de día.** Los títulos del bloque sin
+  color propio (el nombre del vino en la ficha) cogían el color de títulos
+  del Kit; en una web oscura es claro y de día no se veía. Ahora van con la
+  tinta del bloque.
+
+## 0.9.11 · 28 de octubre de 2026
+
+- **La lista sola usa todo el ancho.** Con el diseño «columnas» y sin
+  globo (sin mapa, o el visitante en «Lista»), en pantallas de más de
+  1100 px los filtros pasan a una columna a la izquierda, clavada al bajar,
+  y la lista o la ficha van a la derecha, hasta 1360 px. Por debajo, en
+  columna como antes.
+- **Sin caja en medio.** En «columnas» el fondo es del bloque entero y no
+  de la escena, así que con el bloque a todo lo ancho no queda un
+  rectángulo de otro color en el centro de la página.
+- **El día se lee en las webs oscuras.** El widget ya no enlaza de fábrica
+  la tinta, el texto y el acento a los globales del Kit, ni pone la noche de
+  la casa: vacíos, los pone Vinos. De día van los globales (Secundario,
+  Texto y Principal) si se leen sobre el fondo y, si no, los oscuros de la
+  paleta de la web; de noche, la paleta de la web. En Por Herencia los
+  globales son claros y salían crema sobre crema. Un color elegido en el
+  widget sigue mandando.
+
+## 0.9.10 · 28 de octubre de 2026
+
+- **«Consultar» donde la carta no pone precio.** Si Bodega manda
+  `precio_texto` («Consultar disponibilidad», la «C.D.» de Por Herencia), la
+  lista pone «Consultar» y la ficha el texto entero.
+- **La lista en el orden de la carta.** Si Bodega manda `orden: carta`, la
+  lista no se reordena por zona: va como la carta, agrupada por sus
+  apartados tal cual («Generosos de España del Mediterráneo») y sin el país
+  al lado. Prueba nueva: `pruebas/herencia.js`.
+
+## 0.9.9 · 15 de octubre de 2026
+
+- **Botones de tipo en filas parejas (panel mosaico).** Las columnas ya no
+  salen solo del ancho: se mira cuántos botones caben por fila (140 px como
+  mínimo, 5 como mucho), cuántas filas hacen falta, y se reparten. Con 8
+  botones, 4 + 4 en vez de 5 + 3; con 7, 4 + 3; con 6, 3 + 3. Se recalcula
+  al cambiar el tamaño de la ventana. Las pieles píldoras y ficha no cambian.
+
+## 0.9.8 · 15 de octubre de 2026
+
+- **Botones de Dulces y Generosos.** Junto a Tintos, Blancos, Champagne,
+  Espumosos y Rosados salen «Dulces» (gota ámbar) y «Generosos» (gota
+  caoba), pero solo cuando la carta los tiene. Hasta ahora esos vinos solo
+  se veían en «Todos». Los dos colores son tokens nuevos
+  (`--cv-vino-dulce`, `--cv-vino-generoso`). Prueba nueva:
+  `pruebas/tipos.js`.
+
+## 0.9.7 · 4 de octubre de 2026
+
+- **Los ajustes vuelven a guardarse.** «Comprobar ahora» y la licencia
+  llevaban su propio formulario dentro del de ajustes. El navegador cerraba
+  ahí el de ajustes: lo de después (escena, vistas, textos, colores,
+  precios…) no se enviaba y «Guardar» acababa comprobando la carta. Ahora
+  esos dos formularios van aparte y sus botones apuntan a ellos; se ven y
+  funcionan igual. Prueba nueva: `pruebas/formularios.js`.
+
+## 0.9.6 · 3 de octubre de 2026
+
+- **El mapa del globo lo decide Bodega.** La pestaña Diseño del cliente en
+  Caracool Bodega (0.5.0) elige entre «Continentes sin fronteras» y «Solo
+  países con vinos»; llega con la carta y el bloque lo lleva como
+  `data-globo`. Si Bodega no dice nada, continentes. Se quita el añadido
+  `?mapa=solo-vinos` de la 0.9.5, que era solo para comparar.
+
+## 0.9.5 · 3 de octubre de 2026
+
+- **Un segundo mapa para comparar: «solo vinos».** Añadiendo
+  `?mapa=solo-vinos` a la dirección de la página, el globo enseña solo
+  los paralelos, los meridianos y los países de la carta; el resto del
+  mundo no se pinta. Sin ese añadido, el mapa sigue como en la 0.9.2.
+
+## 0.9.4 · 3 de octubre de 2026
+
+- **El globo tiene inercia.** Al soltarlo en marcha sigue con la velocidad
+  del último tramo del arrastre y frena solo, deprisa al principio y suave
+  al final, como la red. Si el ratón se paró antes de soltar, la inercia se
+  apaga con la pausa. Agarrarlo otra vez lo para; un toque sin arrastre
+  sigue siendo un clic.
+
+## 0.9.3 · 3 de octubre de 2026
+
+- **El giro solo del mapa, fluido de verdad.** En la 0.9.2 se decidía si
+  ir cuadro a cuadro según lo que tardaba el cálculo, y en pantallas
+  grandes se quedaba siempre en el ritmo ahorrador (12 veces por segundo)
+  aunque el navegador iba sobrado. Ahora decide el ritmo real de cuadros:
+  va cuadro a cuadro y solo baja al ritmo ahorrador si durante un segundo
+  seguido los cuadros llegan tarde.
+
+## 0.9.2 · 3 de octubre de 2026
+
+- **El mapa, sin fronteras donde no hay vinos.** Los países sin vinos se
+  funden en una sola forma: se ven los continentes y su costa, sin líneas
+  por dentro. Solo los países de la carta llevan frontera, color y clic.
+  Al girar se pintan unas 30 formas en vez de 177.
+- **El globo se mueve fluido.** Si el aparato pinta rápido, la deriva va
+  cuadro a cuadro; si tarda, vuelve sola al ritmo ahorrador de antes.
+- **Con un país o un vino elegido, el globo ya no se queda quieto.** Se
+  balancea unos grados y vuelve, como la red, y cuanto más cerca, menos.
+  Al arrastrar o elegir otro sitio sigue desde donde esté, sin saltos.
+
+## 0.9.1 · 3 de octubre de 2026
+
+- **La red de un país sale bien en cualquier navegador.** Quien ya había
+  visitado la página (la red general se guarda en el navegador para no
+  volver a formarla) veía la red de un país deshecha: el país en un
+  extremo y sus zonas y uvas tiradas hacia la cámara. Ahora cada punto
+  tiene siempre su peso, la red de un país arranca siempre del mismo
+  sitio (sus zonas alrededor y cada uva o bodega junto a sus zonas) y lo
+  que queda muy lejos se recoge un poco para que nada se pegue a la cámara.
+
+## 0.9.0 · 2 de octubre de 2026
+
+- **Puntos Peñín.** Si Bodega los manda (solo a las webs que los tienen
+  encendidos en su pestaña Diseño), la lista lleva la marca junto al
+  nombre («92 Peñín»), la ficha la línea «92 puntos Peñín (añada 2019)» y
+  el panel un desplegable nuevo, «Peñín» (95, 92 o 90 o más), con su
+  estrella. El desplegable solo aparece si algún vino trae puntos, como el
+  de Parker. Pide Caracool Bodega 0.5.0.
+- **La red de un país.** Al elegir un país (en la red o en el panel), la
+  red pasa a ser la de ese país: él, sus zonas, sus uvas y las bodegas de
+  sus zonas, colocados por fuerzas con el mismo motor que la general, con
+  los hilos algo más largos y bien abierta. Lo demás se abre hacia fuera
+  mientras se apaga, como al entrar en el país, y al quitar la elección
+  todo vuelve a su sitio. Dentro se gira, se acerca, respira y deriva como
+  en la general, y una zona se resalta con sus uvas y sus bodegas. Sustituye
+  a la nube alrededor del elegido de la 0.8.3, que se quedaba plana y no
+  dejaba girar.
+- **Los corazones de «Ayúdame a elegir».** En las cuatro tarjetas y en la
+  lista de abajo ya son como los de la lista del explorador: el corazón
+  solo, sin recuadro ni fondo, gris claro y rojo al pasar o al guardarlo,
+  con la cifra de la gente al lado cuando la web la enseña.
+- **El zoom ya no va a saltos.** La rueda, el trackpad y los botones + y −
+  marcan a dónde ir y la red llega suave; la rueda cuenta cuánto se mueve
+  (un trackpad va fino). Con movimiento reducido sigue siendo inmediato.
+- Prueba de la red (`pruebas/red-raiz.js`) al día: la red del país, que
+  llena el espacio y que se gira arrastrando.
+- Prueba nueva: `pruebas/penin.js` (la marca, la ficha, el filtro y su
+  aspa, en las tres pieles, en escritorio y en el móvil, y que sin puntos
+  no se ve nada).
+
 ## 0.8.5 · 2 de octubre de 2026
 
 - En una web sin el punto de El Churra (Pura Cepa), la ficha de un vino

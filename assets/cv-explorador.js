@@ -468,7 +468,7 @@
       var ll = inter(k);
       proy.rotate([-ll[0], -ll[1]]).scale(escDesde + (escHasta - escDesde) * k);
       pintar();
-      if (t < 1) { giro = requestAnimationFrame(paso); } else { giro = null; quieto = performance.now(); latir(); }
+      if (t < 1) { giro = requestAnimationFrame(paso); } else { giro = null; if (acercado()) { quieto = performance.now(); } latir(); }
     }
     giro = requestAnimationFrame(paso);
   }
@@ -542,8 +542,9 @@
     pedirFinos(); // tocar el globo es la señal de que se va a mirar de cerca
   });
   svg.addEventListener('pointermove', function (e) {
-    // 0.9.17: con el ratón encima del globo no se mueve nada, para poder apuntar a una zona
-    if (!arr) { if (e.pointerType === 'mouse') { quieto = performance.now(); } return; }
+    // 0.9.18: con un país o un vino elegido, el ratón encima del globo lo deja quieto para poder apuntar
+    // a una zona. Con el mundo entero, el globo sigue girando aunque el ratón pase por encima.
+    if (!arr) { if (e.pointerType === 'mouse' && acercado()) { quieto = performance.now(); } return; }
     if (Math.abs(e.clientX - arr.x) > 4 || Math.abs(e.clientY - arr.y) > 4) { arr.movido = true; }
     var k = 0.45 * (282 / proy.scale()) * (W / svg.getBoundingClientRect().width);
     var nueva = [arr.r[0] + (e.clientX - arr.x) * k, Math.max(-70, Math.min(70, arr.r[1] - (e.clientY - arr.y) * k))];
@@ -593,6 +594,8 @@
   // navegador iba sobrado). Empieza cuadro a cuadro; si durante un segundo seguido los cuadros llegan
   // tarde (más de 24 ms de media), pasa al ritmo ahorrador hasta que se recargue la página.
   var balanceo = [0, 0], balanceoDesde = 0, ahorro = false, ritmo = 16.7, lento = 0, derivaUlt = 0;
+  // hay un país, una zona o un vino elegido, o el globo está acercado: es cuando se pausa y se balancea
+  function acercado() { return !!(vinoActivo || paisCerca || proy.scale() / R >= 1.05); }
   function derivando() { return deriva && hayGlobo() && globoVisible && !document.hidden; }
   // 0.9.17: el balanceo ya no gira la proyección ni repinta el mapa en cada cuadro. Se calcula cuánto
   // se movería en pantalla el centro de la vista con esos grados y se aplica como un desplazamiento
@@ -625,7 +628,7 @@
     if (!derivando()) { derivaViva = false; derivaUlt = 0; return; }
     if (derivaUlt) { ritmo += (Math.min(100, ts - derivaUlt) - ritmo) * 0.1; }
     derivaUlt = ts;
-    var cerca = vinoActivo || paisCerca || proy.scale() / R >= 1.05;
+    var cerca = acercado();
     // 0.9.17: después de llegar a un país o una zona, o con el ratón encima, el globo se queda quieto
     // cinco segundos antes de empezar a balancearse; así se puede pinchar en una zona sin que se mueva
     var libre = !arr && !giro && performance.now() - quieto > (cerca ? 5000 : 2500);

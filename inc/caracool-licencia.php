@@ -26,6 +26,10 @@ if ( ! defined( 'ABSPATH' ) && ! defined( 'CARACOOL_VINOS_CLI' ) && ! defined( '
 	exit;
 }
 
+if ( ! defined( 'CARACOOL_LICENCIA_FORM' ) ) {
+	define( 'CARACOOL_LICENCIA_FORM', 'cc-licencia-form' );
+}
+
 if ( ! function_exists( 'caracool_licencia' ) ) {
 
 	if ( ! defined( 'CARACOOL_BODEGA_URL_DEFECTO' ) ) {
@@ -318,12 +322,18 @@ if ( ! function_exists( 'caracool_licencia' ) ) {
 			} else {
 				delete_option( 'caracool_bodega_url' );
 			}
-			if ( ! caracool_licencia_guardar( $texto ) ) {
+			$quitar = ! empty( $_POST['quitar'] ); // phpcs:ignore WordPress.Security
+			if ( ! $quitar && '' === trim( (string) $texto ) ) {
+				// Campo vacío: la licencia guardada no se enseña, así que vacío quiere decir «no cambiarla».
+				wp_safe_redirect( add_query_arg( 'cc_ok', rawurlencode( 'Guardado. La licencia sigue siendo la misma.' ), $volver ) );
+				exit;
+			}
+			if ( ! caracool_licencia_guardar( $quitar ? '' : $texto ) ) {
 				wp_safe_redirect( add_query_arg( 'cc_error', rawurlencode( 'Eso no es una licencia de Caracool: tiene que empezar por CB1 y llevar tres partes.' ), $volver ) );
 				exit;
 			}
 			do_action( 'caracool_licencia_guardada' );
-			wp_safe_redirect( add_query_arg( 'cc_ok', rawurlencode( '' === trim( $texto ) ? 'Licencia quitada.' : 'Licencia guardada.' ), $volver ) );
+			wp_safe_redirect( add_query_arg( 'cc_ok', rawurlencode( $quitar ? 'Licencia quitada.' : 'Licencia guardada.' ), $volver ) );
 			exit;
 		}
 	);
@@ -332,8 +342,14 @@ if ( ! function_exists( 'caracool_licencia' ) ) {
 	 * Pinta la tarjeta. $plugin es la clave del plugin que la enseña
 	 * ('vinos'), para decir si le permite funcionar; $volver, la URL de su
 	 * página de ajustes.
+	 *
+	 * La tarjeta no lleva <form>: sus campos apuntan con form="…" al
+	 * formulario CARACOOL_LICENCIA_FORM, que se pinta aparte con
+	 * caracool_licencia_formulario(), fuera de cualquier otro formulario.
+	 * Hasta Vinos 0.9.6 iba dentro del de ajustes y lo rompía.
 	 */
 	function caracool_licencia_tarjeta( $plugin, $volver ) {
+		$GLOBALS['caracool_licencia_volver'] = $volver;
 		$e = caracool_licencia_estado( $plugin );
 		$d = caracool_licencia_datos();
 		$fija = defined( 'CARACOOL_LICENCIA' ) && CARACOOL_LICENCIA;
@@ -351,33 +367,56 @@ if ( ! function_exists( 'caracool_licencia' ) ) {
 					<div><?php echo esc_html( $d['c'] ); ?><span class="cc-hint">Dominios: <?php echo esc_html( implode( ', ', (array) $d['d'] ) ); ?> · Plugins: <?php echo esc_html( implode( ', ', (array) $d['p'] ) ); ?> · Emitida el <?php echo esc_html( $d['e'] ); ?><?php echo ! empty( $d['x'] ) ? ' · Caduca el ' . esc_html( $d['x'] ) : ''; ?> · Id <code><?php echo esc_html( $d['i'] ); ?></code></span></div>
 				</div>
 			<?php endif; ?>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="caracool_licencia">
-				<input type="hidden" name="volver" value="<?php echo esc_attr( $volver ); ?>">
-				<?php wp_nonce_field( 'caracool_licencia' ); ?>
+			<div>
 				<div class="cc-campo">
 					<label for="cc-licencia">La licencia</label>
 					<div>
 						<?php if ( $fija ) : ?>
 							<p class="cc-hint" style="margin:6px 0 0">Está en <code>wp-config.php</code> (<code>CARACOOL_LICENCIA</code>); se cambia ahí.</p>
 						<?php else : ?>
-							<textarea id="cc-licencia" name="licencia" rows="4" class="cc-mono" placeholder="CB1.…" spellcheck="false"><?php echo esc_textarea( caracool_licencia() ); ?></textarea>
-							<span class="cc-hint">Pégala entera. Para quitarla, déjalo vacío. También puede ir en <code>wp-config.php</code> como <code>CARACOOL_LICENCIA</code>.</span>
+							<?php $actual = caracool_licencia(); ?>
+							<?php if ( $actual ) : ?>
+								<p style="margin:6px 0 8px"><code><?php echo esc_html( strlen( $actual ) > 24 ? substr( $actual, 0, 10 ) . '…' . substr( $actual, -6 ) : $actual ); ?></code></p>
+							<?php endif; ?>
+							<textarea id="cc-licencia" name="licencia" form="<?php echo esc_attr( CARACOOL_LICENCIA_FORM ); ?>" rows="4" class="cc-mono" placeholder="<?php echo esc_attr( $actual ? 'Pega aquí la licencia nueva para cambiarla' : 'CB1.…' ); ?>" spellcheck="false" autocomplete="off"></textarea>
+							<span class="cc-hint">Por seguridad, la guardada no se enseña entera. Pega una nueva solo para cambiarla. También puede ir en <code>wp-config.php</code> como <code>CARACOOL_LICENCIA</code>.</span>
 						<?php endif; ?>
 					</div>
 				</div>
 				<div class="cc-campo">
 					<label for="cc-bodega-url">Bodega</label>
 					<div>
-						<input type="text" id="cc-bodega-url" name="bodega_url" value="<?php echo esc_attr( caracool_bodega_url() ); ?>" <?php disabled( defined( 'CARACOOL_BODEGA_URL' ) && CARACOOL_BODEGA_URL ); ?>>
+						<input type="text" id="cc-bodega-url" name="bodega_url" form="<?php echo esc_attr( CARACOOL_LICENCIA_FORM ); ?>" value="<?php echo esc_attr( caracool_bodega_url() ); ?>" <?php disabled( defined( 'CARACOOL_BODEGA_URL' ) && CARACOOL_BODEGA_URL ); ?>>
 						<span class="cc-hint">Normalmente <?php echo esc_html( CARACOOL_BODEGA_URL_DEFECTO ); ?>. Esta web es <code><?php echo esc_html( caracool_dominio() ); ?></code>.</span>
 					</div>
 				</div>
 				<?php if ( ! $fija ) : ?>
-				<div class="cc-acciones"><button type="submit" class="cc-btn cc-btn-primario">Guardar</button></div>
+				<div class="cc-acciones">
+					<button type="submit" class="cc-btn cc-btn-primario" form="<?php echo esc_attr( CARACOOL_LICENCIA_FORM ); ?>">Guardar</button>
+					<?php if ( caracool_licencia() ) : ?>
+						<button type="submit" name="quitar" value="1" class="cc-btn cc-btn-ghost" form="<?php echo esc_attr( CARACOOL_LICENCIA_FORM ); ?>" onclick="return confirm('¿Quitar la licencia? Vinos dejará de recibir la carta nueva y los plugins de la casa, sus actualizaciones.')">Quitar la licencia</button>
+					<?php endif; ?>
+				</div>
 				<?php endif; ?>
-			</form>
+			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * El formulario de la tarjeta, vacío y oculto: va fuera de cualquier
+	 * otro formulario de la página (en Vinos, en caracool_vinos_formularios_sueltos).
+	 */
+	function caracool_licencia_formulario( $volver = '' ) {
+		if ( '' === $volver && isset( $GLOBALS['caracool_licencia_volver'] ) ) {
+			$volver = $GLOBALS['caracool_licencia_volver'];
+		}
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="<?php echo esc_attr( CARACOOL_LICENCIA_FORM ); ?>" hidden>
+			<input type="hidden" name="action" value="caracool_licencia">
+			<input type="hidden" name="volver" value="<?php echo esc_attr( $volver ); ?>">
+			<?php wp_nonce_field( 'caracool_licencia' ); ?>
+		</form>
 		<?php
 	}
 }

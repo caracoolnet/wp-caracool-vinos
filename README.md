@@ -105,9 +105,10 @@ al pasar, el velo del panel, la banda de la fila) salen de los tokens con
 El panel va en tres tramos separados por un filete: arriba los tipos, cada
 uno con una gota del color del vino (el champagne con un aro dorado, el
 mágnum con una botella); en medio la búsqueda, con lupa y un aspa para
-borrar, y los filtros (uva, país, zona, bodega, precio y Parker), cada uno
+borrar, y los filtros (uva, país, zona, bodega, precio, Parker y Peñín), cada uno
 con su icono (País solo con vinos de más de un país, y entonces Zona espera
-a que se elija uno; Parker solo si algún vino trae puntos); y abajo «Mis vinos» a la izquierda y, a la derecha, Mapa ·
+a que se elija uno; Parker y Peñín solo si algún vino trae puntos, y los
+Peñín solo llegan si Bodega los tiene encendidos para esa web); y abajo «Mis vinos» a la izquierda y, a la derecha, Mapa ·
 Red · Lista y el sol y la luna.
 
 Cada filtro es un desplegable nativo puesto encima, transparente: se abre
@@ -176,13 +177,17 @@ esa cabecera documenta para estos casos; sin ella, no pasa nada.
 El tercer modo, junto a Mapa y Lista (`red="no"` en el shortcode, o el
 interruptor de Ajustes, lo quitan). Arranca solo con los países y las
 zonas: al pinchar un país salen sus uvas, al pinchar una zona sus uvas y
-sus bodegas (desde la 0.8.1; antes salía todo a la vez y abrumaba), y
-desde la 0.8.3 se abren en una nube alrededor del elegido: un país con sus
-zonas cerca y sus uvas más lejos, cada una del lado de sus zonas; una zona
-con sus uvas cerca y sus bodegas más lejos. Cada punto va a su distancia
-(lo que tiene más vinos, más cerca) con un azar suave que sale de su
-nombre, así que la nube de un país es siempre la misma. Al quitar la elección, cada punto vuelve a
-su sitio.
+sus bodegas (desde la 0.8.1; antes salía todo a la vez y abrumaba).
+Desde la 0.9.0, al elegir un país la red pasa a ser la de ese país: él,
+sus zonas, sus uvas y las bodegas de sus zonas, colocados por fuerzas
+entre ellos con el mismo motor que la general, con los hilos algo más
+largos y bien abierta (el grueso llega más allá del borde de la general;
+lo que se sale se ve girando o con el zoom). Lo demás se abre hacia fuera
+mientras se apaga, como al entrar en el país, y al quitar la elección
+todo vuelve a su sitio. Dentro, todo es como en la general: se gira, se
+acerca, respira y deriva, y una zona elegida se resalta con sus uvas y sus
+bodegas. La disposición de cada país se calcula una vez y se guarda
+mientras dura la página.
 Países, zonas, bodegas y uvas, unidos por hilos y colocados en 3D por fuerzas, en el navegador, con lo que haya
 en la carta (unas décimas de segundo; se guarda en `localStorage` con una
 firma de la carta y se rehace sola cuando cambia). Pinchar un punto pone
@@ -190,7 +195,7 @@ el filtro correspondiente (uva, bodega, zona o país) y la lista responde;
 los filtros atenúan lo que no encaja; pasar por un vino de la lista
 enciende su camino (bodega, zona, país, uvas, que salen aunque no se
 vieran); abrir una ficha gira la red
-hasta su bodega. Arrastrar gira, la rueda acerca, el botón ↻ apaga el
+hasta su bodega. Arrastrar gira, la rueda (o el trackpad) y los botones + y − acercan con suavidad, el botón ↻ apaga el
 movimiento (y con `prefers-reduced-motion` no arranca). Los colores: cada
 punto lleva el del tipo de vino que más hace, las uvas el de su piel
 (tinta o blanca; la lista está en el propio script), y en la noche brillan
@@ -287,6 +292,7 @@ node pruebas/kit.js                                           # colores y letra 
 node pruebas/red-raiz.js                                      # la red arranca con países y zonas, y los anillos (el laboratorio, en el 8767)
 node pruebas/filtro-pais.js                                   # el campo País y la Zona que lo espera, en las tres pieles
 node pruebas/puntos.js                                        # los puntos de El Churra: en la lista y la ficha, y en ninguna otra web
+node pruebas/penin.js                                         # los puntos Peñín: etiqueta, ficha y filtro, en las tres pieles y en el móvil
 sh pruebas/red-raiz-puracepa.sh                               # lo mismo con la carta de Pura Cepa
 ```
 

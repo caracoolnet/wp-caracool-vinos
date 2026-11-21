@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.9.19 · 21 de noviembre de 2026
+
+- **La lista sola, bien encajada en el móvil.** Con el diseño «mundo» y la
+  vista Lista, en el móvil y en la tableta la lista se quedaba sin margen:
+  las filas tocaban los dos bordes de la pantalla y la página se podía
+  arrastrar hacia un lado. Ahora lleva el mismo margen que con el mapa.
+- **Los filtros ya no tapan media pantalla.** En esa misma vista, los
+  filtros se quedaban fijos arriba al bajar por la lista y ocupaban casi la
+  mitad de la pantalla del móvil. Ahora se quedan en su sitio, al principio,
+  como en las vistas de mapa y de red. En pantallas anchas siguen fijos,
+  igual que antes.
+
 ## 0.9.18 · 12 de noviembre de 2026
 
 - **El mundo vuelve a girar con el ratón encima.** En la 0.9.17, pasar el

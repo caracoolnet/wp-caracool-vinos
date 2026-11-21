@@ -70,6 +70,8 @@ class Caracool_Vinos_Explorador {
 			'vinos'       => $carta['vinos'],
 			'fecha'       => $carta['fecha'],
 			'nuevos'      => $carta['nuevos'],
+			// 'carta': la lista en el orden de la carta, con sus apartados (lo manda Bodega)
+			'orden'       => isset( $carta['orden'] ) && 'carta' === $carta['orden'] ? 'carta' : '',
 			'region'      => Caracool_Vinos_Ajustes::region(),
 			'precios'     => 'si' === $a['precios'],
 			'ubicacion'   => 'si' === $a['ubicacion'],
@@ -316,14 +318,30 @@ class Caracool_Vinos_Explorador {
 			// un Kit sin color vivo (todo grises): el acento es la tinta, un poco aclarada
 			$acento = self::mezcla( $oscuro, $claro, 0.3 );
 		}
+		// La tinta, el texto y el rojo de día son los colores globales de la
+		// web (Secundario, Texto y Principal), como siempre, pero solo si se
+		// leen sobre el fondo de día. En una web oscura esos globales son
+		// claros y sobre la crema no se verían: entonces van los calculados.
+		$global = array();
+		foreach ( $kit as $c ) {
+			$global[ $c['id'] ] = $c['rgb'];
+		}
+		// (lo elegido a mano en Ajustes manda sobre los globales; el acento solo
+		// marca —corazones, «Quitar»—, así que le basta con menos contraste)
+		$se_lee = function ( $id, $minimo ) use ( $global, $claro ) {
+			return isset( $global[ $id ] ) && self::contraste( $global[ $id ], $claro ) >= $minimo;
+		};
+		$tinta = ( ! $manual['oscuro'] && $se_lee( 'secondary', 4.5 ) ) ? $global['secondary'] : $oscuro;
+		$texto = ( ! $manual['oscuro'] && $se_lee( 'text', 4.5 ) ) ? $global['text'] : self::mezcla( $oscuro, $claro, 0.22 );
+		$rojo  = ( ! $manual['acento'] && $se_lee( 'primary', 2 ) ) ? $global['primary'] : self::mezcla( $acento, $oscuro, 0.2 );
 		return array(
-			'tinta'        => self::hex( $oscuro ),
+			'tinta'        => self::hex( $tinta ),
 			'crema'        => self::hex( $claro ),
 			'crema2'       => self::hex( self::mezcla( $claro, $oscuro, 0.06 ) ),
 			'arena'        => self::hex( self::mezcla( $claro, $acento, 0.22 ) ),
-			'texto'        => self::hex( self::mezcla( $oscuro, $claro, 0.22 ) ),
+			'texto'        => self::hex( $texto ),
 			'borde'        => self::hex( self::mezcla( $claro, $oscuro, 0.16 ) ),
-			'rojo'         => self::hex( self::mezcla( $acento, $oscuro, 0.2 ) ),
+			'rojo'         => self::hex( $rojo ),
 			'ocre'         => self::hex( self::mezcla( $acento, $oscuro, 0.45 ) ),
 			'naranja'      => self::hex( $acento ),
 			'noche-fondo'  => self::hex( $oscuro ),
@@ -487,6 +505,10 @@ class Caracool_Vinos_Explorador {
 			// el punto delante de cada vino: lo que diga Bodega; si no dice nada, solo con el Kit de El Churra
 			'punto'     => ( $b && null !== $b['punto'] ) ? ( 'si' === $b['punto'] ) : self::kit_de_la_casa(),
 			'punto_dado' => $b && null !== $b['punto'],
+			// el mapa del globo: lo que diga Bodega; si no dice nada, continentes
+			'globo'     => $b ? $b['globo'] : 'continentes',
+			// la lista sola en pantalla ancha: dos columnas, o una (los filtros encima) si Bodega lo dice
+			'lista'     => ( $b && isset( $b['lista'] ) && 'una' === $b['lista'] ) ? 'una' : 'dos',
 			'escena'    => isset( $atts['escena'] ) && in_array( $atts['escena'], array( 'dia', 'noche' ), true ) ? $atts['escena'] : ( 'noche' === $a['escena'] ? 'noche' : 'dia' ),
 			'dianoche'  => $si( 'dianoche', $a['dianoche'] ),
 		);
@@ -559,6 +581,8 @@ class Caracool_Vinos_Explorador {
 		$panel      = $vista['panel'];
 		$esquinas   = $vista['esquinas'];
 		$punto      = $vista['punto'];
+		$globo      = $vista['globo'];
+		$lista      = $vista['lista'];
 		$mapa       = $vista['mapa'];
 		$red        = $vista['red'];
 		$modo       = $vista['modo'];

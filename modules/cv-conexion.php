@@ -29,6 +29,7 @@ class Caracool_Vinos_Conexion {
 		add_action( 'caracool_vinos_settings_panels', array( $this, 'panel_carta' ), 10 );
 		add_action( 'caracool_vinos_settings_panels', array( $this, 'panel_conexion' ), 15 );
 		add_action( 'admin_post_caracool_vinos_comprobar', array( $this, 'comprobar_accion' ) );
+		add_action( 'caracool_vinos_formularios_sueltos', array( $this, 'formulario_comprobar' ) );
 		add_action( 'caracool_aviso', array( $this, 'aviso' ), 10, 2 );
 		add_action( 'caracool_licencia_guardada', array( $this, 'tras_guardar_licencia' ) );
 		add_action( self::CRON, array( __CLASS__, 'comprobar' ) );
@@ -133,6 +134,23 @@ class Caracool_Vinos_Conexion {
 
 	// ── Pantallas ───────────────────────────────────────────────────────
 
+	/**
+	 * Los formularios de «Comprobar ahora» y de la licencia, fuera del de ajustes. Hasta la
+	 * 0.9.6 iba dentro: el navegador cerraba ahí el de ajustes, los campos
+	 * de después no se enviaban y «Guardar» acababa comprobando la carta.
+	 */
+	public function formulario_comprobar() {
+		if ( function_exists( 'caracool_licencia_formulario' ) ) {
+			caracool_licencia_formulario( admin_url( 'admin.php?page=caracool-vinos' ) . '#cv-conexion' );
+		}
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="cv-comprobar-form" hidden>
+			<input type="hidden" name="action" value="caracool_vinos_comprobar">
+			<?php wp_nonce_field( 'caracool_vinos_comprobar' ); ?>
+		</form>
+		<?php
+	}
+
 	public function panel_carta() {
 		$c = Caracool_Vinos_Datos::actual();
 		$e = self::estado();
@@ -163,12 +181,11 @@ class Caracool_Vinos_Conexion {
 				<?php if ( $e ) : ?>
 					<div class="cc-aviso <?php echo in_array( $e['resultado'], array( 'nueva', 'al_dia' ), true ) ? '' : 'cc-aviso-ojo'; ?>">Última comprobación, <?php echo esc_html( wp_date( 'j \d\e F \a \l\a\s H:i', (int) $e['cuando'] ) ); ?>: <?php echo esc_html( $e['texto'] ); ?></div>
 				<?php endif; ?>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cc-acciones">
-					<input type="hidden" name="action" value="caracool_vinos_comprobar">
-					<?php wp_nonce_field( 'caracool_vinos_comprobar' ); ?>
-					<button type="submit" class="cc-btn cc-btn-primario">Comprobar ahora</button>
+				<div class="cc-acciones">
+					<?php // el botón apunta a su formulario, que va fuera del de ajustes (un form dentro de otro rompe el guardado) ?>
+					<button type="submit" class="cc-btn cc-btn-primario" form="cv-comprobar-form">Comprobar ahora</button>
 					<span class="cc-hint" style="margin:0">Se comprueba sola dos veces al día, y al momento cuando Bodega avisa de una carta nueva.</span>
-				</form>
+				</div>
 			</div>
 
 			<div class="cc-card">

@@ -152,7 +152,7 @@ class Caracool_Vinos_Ajustes {
 				<?php
 				$vista   = Caracool_Vinos_Explorador::vista();
 				$pieles  = array( 'mosaico' => 'Mosaico', 'pildoras' => 'Píldoras', 'ficha' => 'Ficha' );
-				$resumen = ( 'columnas' === $vista['diseno'] ? 'Columnas' : 'El mundo' ) . ' · panel ' . $pieles[ $vista['panel'] ] . ' · ' . ( 'web' === $vista['esquinas'] ? 'las esquinas de la web' : 'las esquinas de la piel' ) . ' · ' . ( $vista['punto'] ? 'con el punto delante de cada vino' : 'sin punto delante de cada vino' );
+				$resumen = ( 'columnas' === $vista['diseno'] ? 'Columnas' : 'El mundo' ) . ' · panel ' . $pieles[ $vista['panel'] ] . ' · ' . ( 'web' === $vista['esquinas'] ? 'las esquinas de la web' : 'las esquinas de la piel' ) . ' · ' . ( $vista['punto'] ? 'con el punto delante de cada vino' : 'sin punto delante de cada vino' ) . ( 'columnas' === $vista['diseno'] ? ' · la lista sola, en ' . ( 'una' === $vista['lista'] ? 'una columna' : 'dos columnas' ) : '' );
 				?>
 				<div class="cc-campo">
 					<label>Lo decide Caracool</label>

@@ -12,6 +12,7 @@
  *   $panel ('mosaico' | 'pildoras' | 'ficha': la piel del panel), $dianoche (bool: el sol y la luna),
  *   $esquinas ('web': las del Kit | 'diseno': las de la piel),
  *   $punto (bool: el punto delante de cada vino, el de El Churra),
+ *   $lista ('dos' | 'una': la lista sola en pantalla ancha, con los filtros a la izquierda o encima),
  *   $toques (bool: «Ayúdame a elegir», la capa con Tres toques),
  *   $precios (bool), $datos (JSON ya escapado), $rotulo, $titulo, $entradilla, $n, $np,
  *   $pie (el texto del pie, sin fecha; vacío, no hay pie)
@@ -21,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 ?>
-<div class="cv-explorador<?php echo $precios ? '' : ' sin-precio'; ?>" data-cv-root data-diseno="<?php echo esc_attr( $diseno ); ?>" data-modo="<?php echo esc_attr( $modo ); ?>" data-escena="<?php echo esc_attr( $escena ); ?>" data-panel="<?php echo esc_attr( $panel ); ?>" data-esquinas="<?php echo esc_attr( $esquinas ); ?>" data-punto="<?php echo $punto ? 'si' : 'no'; ?>">
+<div class="cv-explorador<?php echo $precios ? '' : ' sin-precio'; ?>" data-cv-root data-diseno="<?php echo esc_attr( $diseno ); ?>" data-modo="<?php echo esc_attr( $modo ); ?>" data-escena="<?php echo esc_attr( $escena ); ?>" data-panel="<?php echo esc_attr( $panel ); ?>" data-esquinas="<?php echo esc_attr( $esquinas ); ?>" data-punto="<?php echo $punto ? 'si' : 'no'; ?>" data-globo="<?php echo esc_attr( $globo ); ?>" data-lista="<?php echo esc_attr( isset( $lista ) ? $lista : 'dos' ); ?>">
 <script type="application/json" data-cv-datos><?php echo $datos; // phpcs:ignore WordPress.Security.EscapeOutput ?></script>
 <div class="escena">
 
@@ -87,6 +88,12 @@ if ( ! defined( 'ABSPATH' ) ) {
             <option value="">Parker</option>
             <option value="96">96 o más</option>
             <option value="94">94 o más</option>
+            <option value="90">90 o más</option>
+          </select></label>
+          <label class="campo campo--penin" data-todo="Todos"><svg class="ico ico--campo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z"/></svg><span class="campo__rot">Peñín</span><span class="campo__val">Todos</span><svg class="ico ico--flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg><button type="button" class="campo__quitar" aria-label="Quitar el filtro: peñín" title="Quitar" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button><select class="sel" id="cv-f-penin" aria-label="Puntos Peñín">
+            <option value="">Peñín</option>
+            <option value="95">95 o más</option>
+            <option value="92">92 o más</option>
             <option value="90">90 o más</option>
           </select></label>
         </div>

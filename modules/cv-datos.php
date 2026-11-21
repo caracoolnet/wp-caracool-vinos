@@ -55,6 +55,10 @@ class Caracool_Vinos_Datos {
 			'esquinas' => ( isset( $d['esquinas'] ) && 'diseno' === $d['esquinas'] ) ? 'diseno' : 'web',
 			// el punto delante de cada vino: 'si' o 'no' si Bodega lo ha decidido; null si no dice nada (automático)
 			'punto'    => ( isset( $d['punto'] ) && in_array( $d['punto'], array( 'si', 'no' ), true ) ) ? $d['punto'] : null,
+			// el mapa del globo (Bodega 0.5.0): continentes si no dice nada
+			'globo'    => ( isset( $d['globo'] ) && 'solo-vinos' === $d['globo'] ) ? 'solo-vinos' : 'continentes',
+			// la lista sola en pantalla ancha (Bodega 0.7.1): dos columnas (filtros a la izquierda) si no dice nada
+			'lista'    => ( isset( $d['lista'] ) && 'una' === $d['lista'] ) ? 'una' : 'dos',
 		);
 	}
 
@@ -112,6 +116,7 @@ class Caracool_Vinos_Datos {
 			'vinos'       => $c['vinos'],
 			'nuevos'      => isset( $c['nuevos'] ) ? array_values( $c['nuevos'] ) : array(),
 			'pdf'         => isset( $c['pdf'] ) ? $c['pdf'] : '',
+			'orden'       => isset( $c['orden'] ) && 'carta' === $c['orden'] ? 'carta' : '',
 		);
 	}
 

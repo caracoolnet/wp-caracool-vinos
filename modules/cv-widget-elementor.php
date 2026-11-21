@@ -223,13 +223,13 @@ class Caracool_Vinos_Widget extends \Elementor\Widget_Base {
 			'nota_colores',
 			array(
 				'type'            => Controls_Manager::RAW_HTML,
-				'raw'             => 'De fábrica van enlazados a los colores globales del Kit (el icono del globo). Si un color se desenlaza, vale solo para este bloque.',
+				'raw'             => 'Vacíos, los pone el bloque con los colores de la web: la tinta, el texto y el acento son los globales del Kit (Secundario, Texto y Principal) cuando se leen sobre el fondo, y si no (una web oscura), los oscuros de su paleta. Un color elegido aquí vale solo para este bloque y manda sobre todo lo demás.',
 				'content_classes' => 'elementor-descriptor',
 			)
 		);
-		$this->token( 'color_tinta', 'Tinta', 'tinta', Global_Colors::COLOR_SECONDARY, '', 'Titulares, nombres de vino, botones activos, el globo y los hilos de la red.' );
-		$this->token( 'color_texto', 'Texto', 'texto', Global_Colors::COLOR_TEXT, '', 'Bodegas, uvas, notas y rótulos pequeños.' );
-		$this->token( 'color_acento', 'Acento', 'rojo', Global_Colors::COLOR_PRIMARY, '', 'El país elegido en el globo, los corazones y «Quitar».' );
+		$this->token( 'color_tinta', 'Tinta', 'tinta', null, '', 'Titulares, nombres de vino, botones activos, el globo y los hilos de la red.' );
+		$this->token( 'color_texto', 'Texto', 'texto', null, '', 'Bodegas, uvas, notas y rótulos pequeños.' );
+		$this->token( 'color_acento', 'Acento', 'rojo', null, '', 'El país elegido en el globo, los corazones y «Quitar».' );
 		$this->token( 'color_fondo', 'Fondo', 'crema', null, '', 'El fondo de la escena. Si no se toca, el crema de la casa.' );
 		$this->token( 'color_papel', 'Papel', 'crema2', null, '', 'Superficies: la tierra del globo, las etiquetas de ubicación.' );
 		$this->token( 'color_arena', 'Arena', 'arena', null, '', 'Los países con vinos en el globo.' );
@@ -294,17 +294,17 @@ class Caracool_Vinos_Widget extends \Elementor\Widget_Base {
 			'nota_noche',
 			array(
 				'type'            => Controls_Manager::RAW_HTML,
-				'raw'             => 'Solo cuentan con la escena «De noche». La cueva y la crema de la casa de fábrica; el acento, enlazado al color de Acento del Kit.',
+				'raw'             => 'Solo cuentan con la escena «De noche». Vacíos, salen de la paleta de la web: el fondo es su color más oscuro y el texto, el más claro (con el Kit de El Churra, la cueva y la crema de la casa).',
 				'content_classes' => 'elementor-descriptor',
 			)
 		);
-		$this->token( 'noche_fondo', 'Fondo', 'noche-fondo', null, '#0F0907' );
-		$this->token( 'noche_papel', 'Papel', 'noche-papel', null, '#120B09' );
-		$this->token( 'noche_texto', 'Texto fuerte', 'noche-texto', null, '#FAF5EC' );
-		$this->token( 'noche_suave', 'Texto suave', 'noche-suave', null, '#B9A78F' );
-		$this->token( 'noche_borde', 'Bordes', 'noche-borde', null, 'rgba(250,245,236,0.14)' );
-		$this->token( 'noche_arena', 'Arena', 'noche-arena', null, '#2A1C16', 'Los países con vinos en el globo, de noche.' );
-		$this->token( 'noche_acento', 'Acento', 'noche-acento', Global_Colors::COLOR_ACCENT, '', 'Sobre oscuro, el naranja luz de la casa.' );
+		$this->token( 'noche_fondo', 'Fondo', 'noche-fondo' );
+		$this->token( 'noche_papel', 'Papel', 'noche-papel' );
+		$this->token( 'noche_texto', 'Texto fuerte', 'noche-texto' );
+		$this->token( 'noche_suave', 'Texto suave', 'noche-suave' );
+		$this->token( 'noche_borde', 'Bordes', 'noche-borde' );
+		$this->token( 'noche_arena', 'Arena', 'noche-arena', null, '', 'Los países con vinos en el globo, de noche.' );
+		$this->token( 'noche_acento', 'Acento', 'noche-acento', null, '', 'Sobre oscuro, el acento de la web.' );
 
 		$this->end_controls_section();
 	}

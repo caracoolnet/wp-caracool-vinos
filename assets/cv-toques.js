@@ -297,6 +297,23 @@
       if (viejo && !quieto && !sinFoco) { viejo.classList.add('sale'); setTimeout(pintar, 170); } else { pintar(); }
     }
 
+    /* Con una letra ancha (la de otra web) una palabra larga del nombre
+       («Generosos») puede no caber a la izquierda de la botella: se baja el
+       tamaño de ese nombre, de punto en punto, hasta que cabe (18 px como
+       mucho). Con la letra de la casa no hace nada. */
+    function encajar(g) {
+      if (!g || !g.isConnected) { return; }
+      g.querySelectorAll('.tq-op b').forEach(function (b) {
+        b.style.fontSize = '';
+        var t = parseFloat(getComputedStyle(b).fontSize) || 0;
+        while (b.scrollWidth > b.clientWidth + 1 && t > 18) { t -= 1; b.style.fontSize = t + 'px'; }
+      });
+    }
+    var encajarTras = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(encajarTras);
+      encajarTras = setTimeout(function () { document.querySelectorAll('.cv-toques .tq-opciones').forEach(encajar); }, 150);
+    });
     function vistaPaso(n) {
       var p = PASOS[n];
       var d = el('section', { class: 'tq-paso' });
@@ -307,6 +324,8 @@
       var g = el('div', { class: 'tq-opciones' });
       var cols = p.opciones.length === 6 ? 3 : Math.min(p.opciones.length, 5);
       g.style.setProperty('--tq-cols', cols);
+      requestAnimationFrame(function () { requestAnimationFrame(function () { encajar(g); }); });
+      if (document.fonts && document.fonts.ready) { document.fonts.ready.then(function () { encajar(g); }); }
       var ns = p.opciones.map(function (o) { return cuenta(p.clave, o.v); });
       var maxP = p.precio ? p.opciones[p.opciones.length - 2].a * 2 : 1;
       p.opciones.forEach(function (o, i) {

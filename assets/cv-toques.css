@@ -34,7 +34,9 @@
 .cv-toques{
   /* derivados: el papel claro de las fichas y el color de cada tipo */
   --tq-papel:color-mix(in srgb,var(--cv-crema) 45%,#fff);
-  --tq-caja:var(--cv-radio-campo,18px);
+  /* las baldosas toman las esquinas de los campos de la web, con tope: una
+     web de campos en cápsula (999px) las volvía círculos y cortaba el texto */
+  --tq-caja:min(var(--cv-radio-campo,18px),24px);
   --tq-boton:var(--cv-radio-boton,999px);
   --tq-tinto:color-mix(in srgb,var(--cv-vino-tinto) 45%,var(--cv-tinta));
   --tq-blanco:color-mix(in srgb,var(--cv-vino-blanco) 45%,var(--cv-crema));
@@ -99,6 +101,10 @@
 .cv-toques.cv-toques .tq-op:active:not(:disabled){transform:translateY(-1px) scale(.99)}
 .cv-toques.cv-toques .tq-op:disabled{opacity:.38;cursor:default}
 .cv-toques.cv-toques .tq-op b{position:relative;z-index:1;font:500 clamp(24px,2.6vw,32px)/1.05 var(--cv-didona)}
+/* el nombre y la cuenta no pisan la botella (un tercio de su alto de ancho,
+   a 16 px del borde): se quedan a su izquierda y, si con una letra ancha una
+   palabra no cabe, el script baja el nombre de tamaño (encajar()) */
+.cv-toques.cv-toques .tq-op:has(.tq-fig) :is(b,small){max-width:calc(100% - 52px)}
 .cv-toques.cv-toques .tq-op small{position:relative;z-index:1;display:block;margin-top:6px;font-size:13px;color:var(--cv-texto)}
 .cv-toques.cv-toques .tq-op small span{display:block}
 .cv-toques.cv-toques .tq-op .tq-fig{position:absolute;top:18px;right:16px;height:62%;z-index:0}
@@ -156,12 +162,16 @@
 .cv-toques.cv-toques .tq-precio{font:500 32px/1 var(--cv-didona);color:var(--cv-tinta)}
 
 /* el corazón, con la cifra de la gente cuando la hay */
-.cv-toques.cv-toques .tq-corazon{flex:none;min-width:44px;height:44px;padding:0 12px;border-radius:var(--tq-boton);border:1px solid var(--cv-borde);background:var(--tq-papel);color:var(--cv-texto);display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-left:auto;transition:color .25s ease,border-color .25s ease}
+.cv-toques.cv-toques .tq-corazon{flex:none;width:34px;min-width:34px;height:34px;min-height:0;padding:0;margin:0 0 0 auto;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--cv-borde);display:inline-flex;align-items:center;justify-content:center;gap:4px;text-transform:none;letter-spacing:0;transition:color .25s ease,transform .25s var(--cv-curva)}
+.cv-toques.cv-toques .tq-corazon:hover,.cv-toques.cv-toques .tq-corazon:focus{background:none;border:0;box-shadow:none;color:var(--cv-rojo)}
+.cv-toques.cv-toques .tq-corazon:focus-visible{outline:2px solid var(--cv-rojo);outline-offset:2px}
 .cv-toques.cv-toques .tq-corazon svg{width:18px;height:18px;display:block}
-.cv-toques.cv-toques .tq-corazon svg path{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round;transition:fill .25s ease}
-.cv-toques.cv-toques .tq-corazon small{font:500 13px/1 var(--cv-sans);font-variant-numeric:tabular-nums}
-.cv-toques.cv-toques .tq-corazon:hover{border-color:var(--cv-rojo);color:var(--cv-rojo)}
-.cv-toques.cv-toques .tq-corazon.on{color:var(--cv-rojo);border-color:var(--cv-rojo)}
+.cv-toques.cv-toques .tq-corazon svg path{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linejoin:round;transition:fill .25s ease}
+/* con la cifra de la gente al lado, como en la lista del explorador */
+.cv-toques.cv-toques .tq-corazon:has(small){width:auto;padding:0 6px;border-radius:999px}
+.cv-toques.cv-toques .tq-corazon small{font:500 12px/1 var(--cv-sans);font-variant-numeric:tabular-nums;letter-spacing:0;color:var(--cv-texto)}
+.cv-toques.cv-toques .tq-corazon.on{color:var(--cv-rojo)}
+.cv-toques.cv-toques .tq-corazon.on small{color:var(--cv-rojo)}
 .cv-toques.cv-toques .tq-corazon.on svg path{fill:currentColor}
 .cv-toques.cv-toques .tq-corazon.late{animation:tq-late .5s var(--cv-curva)}
 @keyframes tq-late{0%{transform:scale(1)}40%{transform:scale(1.2)}100%{transform:scale(1)}}

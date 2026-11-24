@@ -1,5 +1,19 @@
 # Cambios
 
+## 0.9.20 · 24 de noviembre de 2026
+
+- **La lista se pinta por tramos.** Al entrar salen los primeros 60 vinos y
+  el resto se va añadiendo, de 120 en 120, antes de que el visitante llegue
+  al final al bajar. No hay páginas ni botones: se baja igual que antes. Los
+  filtros, el buscador y los contadores siguen trabajando con la carta
+  entera. Con la carta de La Bien Pagá (1.095 vinos) la página pasa de unos
+  14.100 elementos a unos 1.550, y en un móvil lento un filtro tarda la
+  mitad o menos en responder.
+- Al volver de la ficha de un vino que estaba muy abajo, la lista pinta lo
+  que falte hasta ese vino y lo deja a la vista, como antes.
+- Con el diseño «mundo» y el mapa, donde la lista se desplaza por dentro,
+  los tramos se añaden con el scroll de la propia lista.
+
 ## 0.9.19 · 21 de noviembre de 2026
 
 - **La lista sola, bien encajada en el móvil.** Con el diseño «mundo» y la

@@ -1334,7 +1334,51 @@
     fila.firstChild.classList.toggle('activo', vinoActivo === v);
     return fila;
   }
+  /* La lista se pinta por tramos: los primeros vinos al momento y el resto
+     según se acerca el final al bajar. Los filtros y el buscador siguen
+     trabajando con la carta entera; solo cambia cuántas filas hay en la
+     página a la vez (una carta de mil vinos eran más de 14.000 nodos). */
+  var PRIMER_TRAMO = 60, TRAMO = 120;
+  var pendiente = null; // { lista, pos, agrupar, ultima, ultimoGrupo, centinela, vigia }
+  function pararTramos() {
+    if (pendiente && pendiente.vigia) { pendiente.vigia.disconnect(); }
+    pendiente = null;
+  }
+  function tramo(n) {
+    var p = pendiente, f = document.createDocumentFragment(), fin = Math.min(p.lista.length, p.pos + n);
+    for (; p.pos < fin; p.pos++) {
+      var v = p.lista[p.pos];
+      var clave = (v.seccion || v.zona || '');
+      if (p.agrupar && clave !== p.ultima) {
+        p.ultima = clave; p.ultimoGrupo = null;
+        var g = document.createElement('div'); g.className = 'grupo';
+        g.innerHTML = ORDEN_CARTA ? '<h3>' + (clave || 'Sin apartado') + '</h3>' : '<h3>' + (legible(clave) || 'Sin zona') + '</h3><small>' + (v.pais || '') + '</small>';
+        f.appendChild(g);
+      }
+      // el subrótulo de la carta: la bodega («Bodega Casa Castillo») o el
+      // estilo («Grandes Maisons»), tal y como lo agrupa el sumiller
+      if (p.agrupar && (v.grupo || '') !== p.ultimoGrupo) {
+        p.ultimoGrupo = v.grupo || '';
+        if (p.ultimoGrupo) { var h = document.createElement('h4'); h.className = 'subgrupo'; h.textContent = p.ultimoGrupo; f.appendChild(h); }
+      }
+      f.appendChild(filaDe(v));
+    }
+    return f;
+  }
+  function seguirTramo() {
+    var p = pendiente;
+    if (!p) { return; }
+    listaEl.insertBefore(tramo(TRAMO), p.centinela);
+    if (p.pos >= p.lista.length) { p.centinela.remove(); pararTramos(); return; }
+    // volver a vigilar da un aviso al momento: si el final sigue cerca, otro tramo
+    p.vigia.unobserve(p.centinela); p.vigia.observe(p.centinela);
+  }
+  // pinta lo que falte hasta que la fila del vino esté en la página (al volver de la ficha)
+  function pintarHasta(v) {
+    while (pendiente && !(filas[v.i] && filas[v.i].isConnected)) { seguirTramo(); }
+  }
   function pintarLista(lista) {
+    pararTramos();
     listaEl.textContent = '';
     var agrupar = !filtro.top;
     if (filtro.top) {
@@ -1370,26 +1414,26 @@
       aviso.appendChild(g1);
       frag.appendChild(aviso);
     }
-    var ultimoGrupo = null;
-    lista.forEach(function (v) {
-      var clave = (v.seccion || v.zona || '');
-      if (agrupar && clave !== ultima) {
-        ultima = clave; ultimoGrupo = null;
-        var g = document.createElement('div'); g.className = 'grupo';
-        g.innerHTML = ORDEN_CARTA ? '<h3>' + (clave || 'Sin apartado') + '</h3>' : '<h3>' + (legible(clave) || 'Sin zona') + '</h3><small>' + (v.pais || '') + '</small>';
-        frag.appendChild(g);
-      }
-      // el subrótulo de la carta: la bodega («Bodega Casa Castillo») o el
-      // estilo («Grandes Maisons»), tal y como lo agrupa el sumiller
-      if (agrupar && (v.grupo || '') !== ultimoGrupo) {
-        ultimoGrupo = v.grupo || '';
-        if (ultimoGrupo) { var h = document.createElement('h4'); h.className = 'subgrupo'; h.textContent = ultimoGrupo; frag.appendChild(h); }
-      }
-      var fila = filaDe(v);
-      frag.appendChild(fila);
-    });
+    pendiente = { lista: lista, pos: 0, agrupar: agrupar, ultima: ultima, ultimoGrupo: null, centinela: null, vigia: null };
+    // sin IntersectionObserver (navegadores muy viejos), la lista entera de una vez
+    frag.appendChild(tramo(window.IntersectionObserver ? PRIMER_TRAMO : lista.length));
     listaEl.appendChild(frag);
+    if (pendiente.pos >= lista.length) { pararTramos(); return; }
+    var centinela = document.createElement('div'); centinela.className = 'lista-mas'; centinela.setAttribute('aria-hidden', 'true');
+    listaEl.appendChild(centinela);
+    pendiente.centinela = centinela;
+    // con la página: el vigía avisa cuando el final está a 1.600 px de la pantalla
+    pendiente.vigia = new IntersectionObserver(function (es) {
+      if (es[es.length - 1].isIntersecting) { seguirTramo(); }
+    }, { rootMargin: '1600px 0px' });
+    pendiente.vigia.observe(centinela);
   }
+  // con la lista desplazándose por dentro (el mundo en escritorio), el vigía no
+  // ve más allá del borde de la lista: lo mira el scroll de la propia lista
+  listaEl.addEventListener('scroll', function () {
+    if (!pendiente || !pendiente.centinela) { return; }
+    if (pendiente.centinela.getBoundingClientRect().top - listaEl.getBoundingClientRect().bottom < 1600) { seguirTramo(); }
+  }, { passive: true });
 
   /* ── La ficha ──────────────────────────────────────────────────────── */
   var vinoActivo = null;
@@ -1432,7 +1476,7 @@
     marcarPaises(); pintar();
     if (volverALista !== false) {
       aplicar();
-      if (habia) { var b = listaEl.querySelector('[data-i="' + habia.i + '"]'); if (b) { b.scrollIntoView({ block: 'center', behavior: reducido ? 'auto' : 'smooth' }); } }
+      if (habia) { pintarHasta(habia); var b = listaEl.querySelector('[data-i="' + habia.i + '"]'); if (b) { b.scrollIntoView({ block: 'center', behavior: reducido ? 'auto' : 'smooth' }); } }
     }
   }
   function otros(n) { return n === 1 ? 'El otro' : 'Los otros ' + n; }

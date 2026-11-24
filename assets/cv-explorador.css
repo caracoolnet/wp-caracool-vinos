@@ -547,6 +547,7 @@
 .cv-explorador.cv-explorador .vino__datos b{font-weight:500}
 .cv-explorador.cv-explorador .vino__precio{grid-column:2;grid-row:1/3;align-self:center;font:500 17px/1 var(--cv-sans);font-variant-numeric:tabular-nums;color:var(--cv-tinta);white-space:nowrap}
 .cv-explorador.cv-explorador.sin-precio .vino__precio{display:none}
+.cv-explorador.cv-explorador .lista-mas{height:1px}
 .cv-explorador.cv-explorador .vacio{padding:64px 0;text-align:center;color:var(--cv-texto);font:var(--cv-peso-fino,300) 16px/1.5 var(--cv-sans)}
 .cv-explorador.cv-explorador .lista.oculto + .ficha + .lista__pie{display:none}
 .cv-explorador.cv-explorador .lista__pie{margin:40px 0 0;padding-top:16px;border-top:1px solid var(--cv-borde);font:400 12.5px/1.5 var(--cv-sans);color:var(--cv-texto)}
